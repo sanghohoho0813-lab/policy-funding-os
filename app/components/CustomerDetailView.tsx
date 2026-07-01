@@ -3,7 +3,13 @@
 import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { Customer, CustomerStage } from "@/app/types";
+import type {
+  ConsultationChecklist,
+  ConsultationChecklistKey,
+  Customer,
+  CustomerStage,
+  LeadReaction,
+} from "@/app/types";
 import { CUSTOMER_STAGES } from "@/app/types";
 import { STAGE_BADGE } from "@/app/lib/mockCustomers";
 import {
@@ -13,6 +19,16 @@ import {
   saveCustomer,
   subscribeCustomers,
 } from "@/app/lib/storage";
+import {
+  CHECKLIST_ITEMS,
+  buildConsultationMessages,
+  checklistProgress,
+  closingVerdict,
+  computeClosingScore,
+  LEAD_REACTIONS,
+  normalizeChecklist,
+  reactionResponse,
+} from "@/app/lib/consultation";
 import CopyMessage from "./CopyMessage";
 
 // useSyncExternalStore 로 서버/클라이언트 렌더를 구분해 하이드레이션 안전하게 처리
@@ -53,6 +69,12 @@ function receivedDocCount(stage: CustomerStage): number {
   }
 }
 
+const TONE = {
+  green: { text: "text-green-600", chip: "bg-green-100 text-green-700", bar: "bg-green-500" },
+  amber: { text: "text-amber-600", chip: "bg-amber-100 text-amber-700", bar: "bg-amber-500" },
+  slate: { text: "text-slate-600", chip: "bg-slate-100 text-slate-700", bar: "bg-slate-400" },
+} as const;
+
 function InfoTile({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl bg-slate-50 p-4">
@@ -82,21 +104,60 @@ function CustomerEditor({
   const [stage, setStage] = useState<CustomerStage>(customer.stage);
   const [nextAction, setNextAction] = useState(customer.nextAction);
   const [memo, setMemo] = useState(customer.memo);
+  const [checklist, setChecklist] = useState<ConsultationChecklist>(() =>
+    normalizeChecklist(customer.consultationChecklist),
+  );
+  const [reaction, setReaction] = useState<LeadReaction | null>(
+    customer.leadReaction ?? null,
+  );
   const [notice, setNotice] = useState<string | null>(null);
 
   const received = receivedDocCount(stage);
+  const closing = computeClosingScore({ score: customer.score, memo, consultationChecklist: checklist });
+  const verdict = closingVerdict(closing);
+  const tone = TONE[verdict.tone];
+  const progress = checklistProgress({ consultationChecklist: checklist });
 
-  const followUpMessage =
-    `${customer.companyName} 대표님, 안녕하세요 😊\n` +
-    `지난 상담 이후 ${customer.recommendedAgency} 기준으로 검토를 이어가고 있습니다.\n` +
-    `다음 단계로 "${nextAction}" 부분을 준비하면 좋을 것 같아요.\n` +
-    `편하신 시간에 짧게 통화 가능하실까요? 편하신 때 알려주세요!`;
+  const messages = buildConsultationMessages({
+    ...customer,
+    nextAction,
+    leadReaction: reaction,
+  });
 
-  const handleSave = () => {
-    saveCustomer({ ...customer, stage, nextAction, memo });
-    setNotice("저장되었습니다.");
+  const showNotice = (msg: string) => {
+    setNotice(msg);
     window.setTimeout(() => setNotice(null), 2500);
   };
+
+  // 항상 최신 로컬 상태 + override 를 합쳐 저장하고 closingScore 를 재계산한다.
+  const persist = (override: Partial<Customer>, msg = "저장되었습니다.") => {
+    const next: Customer = {
+      ...customer,
+      stage,
+      nextAction,
+      memo,
+      consultationChecklist: checklist,
+      leadReaction: reaction,
+      ...override,
+    };
+    next.closingScore = computeClosingScore(next);
+    saveCustomer(next);
+    showNotice(msg);
+  };
+
+  const toggleChecklist = (key: ConsultationChecklistKey) => {
+    const nextChecklist = { ...checklist, [key]: !checklist[key] };
+    setChecklist(nextChecklist);
+    persist({ consultationChecklist: nextChecklist }, "체크리스트 저장됨");
+  };
+
+  const chooseReaction = (r: LeadReaction) => {
+    const nextReaction = reaction === r ? null : r;
+    setReaction(nextReaction);
+    persist({ leadReaction: nextReaction }, "대표 반응 저장됨");
+  };
+
+  const handleSave = () => persist({});
 
   const handleDelete = () => {
     const ok = window.confirm(`'${customer.companyName}' 고객을 삭제할까요?`);
@@ -172,14 +233,43 @@ function CustomerEditor({
         </div>
       </div>
 
+      {/* 계약 가능성 점수 */}
+      <div className="mt-6 rounded-3xl border border-slate-100 bg-white p-6 shadow-sm sm:p-8">
+        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+          <div>
+            <p className="text-sm font-semibold text-slate-500">계약 가능성</p>
+            <div className="mt-1 flex items-end gap-3">
+              <span className={`text-4xl font-bold ${tone.text}`}>{closing}</span>
+              <span className="pb-1 text-sm text-slate-400">/ 100</span>
+              <span
+                className={`mb-1 rounded-full px-3 py-1 text-xs font-semibold ${tone.chip}`}
+              >
+                {verdict.label}
+              </span>
+            </div>
+          </div>
+          <p className="text-sm text-slate-500">
+            상담 체크리스트{" "}
+            <span className="font-semibold text-slate-700">
+              {progress.done}/{progress.total}
+            </span>{" "}
+            완료
+          </p>
+        </div>
+        <div className="mt-4 h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+          <div
+            className={`h-full rounded-full ${tone.bar}`}
+            style={{ width: `${closing}%` }}
+          />
+        </div>
+      </div>
+
       {/* 진행 관리 (편집) */}
       <div className="mt-6 rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
         <h2 className="text-lg font-bold">⚙️ 진행 관리</h2>
         <div className="mt-4 grid gap-4">
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-semibold text-slate-700">
-              진행단계
-            </span>
+            <span className="text-sm font-semibold text-slate-700">진행단계</span>
             <select
               value={stage}
               onChange={(e) => setStage(e.target.value as CustomerStage)}
@@ -194,9 +284,7 @@ function CustomerEditor({
           </label>
 
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-semibold text-slate-700">
-              다음 액션
-            </span>
+            <span className="text-sm font-semibold text-slate-700">다음 액션</span>
             <input
               value={nextAction}
               onChange={(e) => setNextAction(e.target.value)}
@@ -206,13 +294,11 @@ function CustomerEditor({
           </label>
 
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-semibold text-slate-700">
-              상담 메모
-            </span>
+            <span className="text-sm font-semibold text-slate-700">상담 메모</span>
             <textarea
               value={memo}
               onChange={(e) => setMemo(e.target.value)}
-              placeholder="상담 내용, 특이사항 등을 기록하세요"
+              placeholder="상담 내용, 특이사항 등을 기록하세요 (30자 이상이면 계약 가능성 점수 +10)"
               className="min-h-28 w-full resize-y rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
           </label>
@@ -234,6 +320,81 @@ function CustomerEditor({
             </button>
           </div>
         </div>
+      </div>
+
+      {/* 상담 진행 체크리스트 */}
+      <div className="mt-6 rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold">✅ 상담 진행 체크리스트</h2>
+          <span className="text-sm font-medium text-slate-500">
+            {progress.done} / {progress.total}
+          </span>
+        </div>
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          {CHECKLIST_ITEMS.map((item) => {
+            const done = checklist[item.key];
+            return (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => toggleChecklist(item.key)}
+                className={`flex items-center gap-2.5 rounded-xl border px-3.5 py-3 text-left text-sm transition-colors ${
+                  done
+                    ? "border-blue-200 bg-blue-50/60 text-blue-900"
+                    : "border-slate-100 bg-slate-50 text-slate-600 hover:border-blue-200"
+                }`}
+              >
+                <span
+                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[11px] font-bold ${
+                    done
+                      ? "bg-blue-600 text-white"
+                      : "border border-slate-300 text-transparent"
+                  }`}
+                >
+                  ✓
+                </span>
+                <span className={done ? "font-medium" : ""}>{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 대표 반응 기록 */}
+      <div className="mt-6 rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-bold">🙋 대표 반응</h2>
+        <p className="mt-1 text-sm text-slate-500">
+          대표님 반응을 선택하면 상황에 맞는 대응 멘트를 추천해드려요.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {LEAD_REACTIONS.map((r) => {
+            const active = reaction === r;
+            return (
+              <button
+                key={r}
+                type="button"
+                onClick={() => chooseReaction(r)}
+                className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                  active
+                    ? "border-blue-600 bg-blue-600 text-white"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:text-blue-700"
+                }`}
+              >
+                {r}
+              </button>
+            );
+          })}
+        </div>
+        {reaction && (
+          <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50/50 p-4">
+            <p className="text-xs font-semibold text-blue-700">
+              추천 대응 멘트 · {reaction}
+            </p>
+            <p className="mt-1.5 text-sm leading-6 text-slate-700">
+              {reactionResponse(reaction)}
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
@@ -297,11 +458,16 @@ function CustomerEditor({
         </div>
       </div>
 
-      {/* 재접촉 메시지 */}
+      {/* 복사 가능한 상담 메시지 */}
       <div className="mt-6 rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-bold">💬 재접촉 메시지</h2>
-        <div className="mt-4">
-          <CopyMessage label="재접촉 유도 메시지" text={followUpMessage} />
+        <h2 className="text-lg font-bold">💬 복사 가능한 상담 메시지</h2>
+        <p className="mt-1 text-sm text-slate-500">
+          현재 고객 정보·추천기관·대표 반응에 맞춰 자동 생성됩니다.
+        </p>
+        <div className="mt-4 space-y-4">
+          {messages.map((m) => (
+            <CopyMessage key={m.key} label={m.label} text={m.text} />
+          ))}
         </div>
       </div>
     </Shell>
@@ -326,7 +492,7 @@ export default function CustomerDetailView({
     getServerCustomers,
   );
 
-  // 하이드레이션 전에는 서버가 알고 있는 Mock 만으로 골격을 보여준다.
+  // 하이드레이션 전에는 골격만 보여준다.
   if (!isHydrated) {
     return (
       <Shell>

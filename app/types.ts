@@ -129,6 +129,33 @@ export type CustomerStage =
   | "실패"
   | "재접촉 예정";
 
+// 상담 진행 체크리스트 (클로징 지원)
+export type ConsultationChecklistKey =
+  | "needs"
+  | "purpose"
+  | "debt"
+  | "credit"
+  | "revenue"
+  | "taxArrears"
+  | "agencyExplained"
+  | "orderExplained"
+  | "feeExplained"
+  | "noGuaranteeNotice"
+  | "docsRequested"
+  | "nextMeeting";
+
+export type ConsultationChecklist = Record<ConsultationChecklistKey, boolean>;
+
+// 대표(고객) 반응
+export type LeadReaction =
+  | "긍정적"
+  | "고민 중"
+  | "비용 부담"
+  | "타 업체 비교 중"
+  | "연락 두절"
+  | "보류 요청"
+  | "진행 의사 있음";
+
 export interface Customer {
   id: string;
   companyName: string;
@@ -145,6 +172,10 @@ export interface Customer {
   // 진단에서 저장된 고객만 보유 (Mock 고객에는 없음)
   diagnosisInput?: DiagnosisInput;
   diagnosisResult?: DiagnosisResult;
+  // 상담/클로징 확장 (기존·Mock 고객에는 없을 수 있어 옵셔널)
+  consultationChecklist?: ConsultationChecklist;
+  leadReaction?: LeadReaction | null;
+  closingScore?: number;
 }
 
 // 진행단계 드롭다운/필터에 재사용

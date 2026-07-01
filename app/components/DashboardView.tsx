@@ -10,6 +10,11 @@ import {
   getStoredCustomers,
   subscribeCustomers,
 } from "@/app/lib/storage";
+import {
+  checklistProgress,
+  closingVerdict,
+  computeClosingScore,
+} from "@/app/lib/consultation";
 
 function countStages(list: Customer[], stages: CustomerStage[]) {
   return list.filter((c) => stages.includes(c.stage)).length;
@@ -173,7 +178,49 @@ export default function DashboardView() {
                 <span className="rounded-full bg-slate-100 px-2.5 py-0.5 font-medium text-slate-600">
                   가능성 {c.score}점
                 </span>
+                {(() => {
+                  const closing = computeClosingScore(c);
+                  const verdict = closingVerdict(closing);
+                  const cls =
+                    verdict.tone === "green"
+                      ? "bg-green-50 text-green-700"
+                      : verdict.tone === "amber"
+                        ? "bg-amber-50 text-amber-700"
+                        : "bg-slate-100 text-slate-600";
+                  return (
+                    <span
+                      className={`rounded-full px-2.5 py-0.5 font-medium ${cls}`}
+                    >
+                      계약 {closing}점 · {verdict.label}
+                    </span>
+                  );
+                })()}
+                {c.leadReaction && (
+                  <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 font-medium text-indigo-700">
+                    {c.leadReaction}
+                  </span>
+                )}
               </div>
+
+              {(() => {
+                const { done, total } = checklistProgress(c);
+                return (
+                  <div className="mt-3">
+                    <div className="flex items-center justify-between text-xs text-slate-500">
+                      <span>상담 체크리스트</span>
+                      <span className="font-medium text-slate-600">
+                        {done}/{total}
+                      </span>
+                    </div>
+                    <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                      <div
+                        className="h-full rounded-full bg-blue-500"
+                        style={{ width: `${(done / total) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })()}
 
               <div className="mt-4 border-t border-slate-100 pt-3">
                 <p className="text-xs font-semibold text-slate-500">다음 액션</p>
