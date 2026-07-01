@@ -29,6 +29,7 @@ import {
   normalizeChecklist,
   reactionResponse,
 } from "@/app/lib/consultation";
+import { customerTodayTasks } from "@/app/lib/coach";
 import CopyMessage from "./CopyMessage";
 
 // useSyncExternalStore 로 서버/클라이언트 렌더를 구분해 하이드레이션 안전하게 처리
@@ -111,8 +112,10 @@ function CustomerEditor({
     customer.leadReaction ?? null,
   );
   const [notice, setNotice] = useState<string | null>(null);
+  const [doneToday, setDoneToday] = useState<Record<string, boolean>>({});
 
   const received = receivedDocCount(stage);
+  const todayList = customerTodayTasks({ ...customer, stage, nextAction });
   const closing = computeClosingScore({ score: customer.score, memo, consultationChecklist: checklist });
   const verdict = closingVerdict(closing);
   const tone = TONE[verdict.tone];
@@ -198,6 +201,42 @@ function CustomerEditor({
           ✅ {notice}
         </div>
       )}
+
+      {/* 오늘 해야 할 일 (최상단) */}
+      <div className="mt-5 rounded-3xl border-2 border-blue-100 bg-white p-6 shadow-sm">
+        <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900">
+          <span className="text-xl">📌</span> 오늘 해야 할 일
+        </h2>
+        <p className="mt-1 text-sm text-slate-500">
+          {customer.companyName} · 지금 진행단계에서 챙길 것들이에요.
+        </p>
+        <div className="mt-4 space-y-2">
+          {todayList.map((t) => {
+            const done = doneToday[t];
+            return (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setDoneToday((p) => ({ ...p, [t]: !p[t] }))}
+                className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm transition-colors ${
+                  done
+                    ? "border-slate-100 bg-slate-50 text-slate-400"
+                    : "border-blue-100 bg-blue-50/50 text-slate-800 hover:border-blue-300"
+                }`}
+              >
+                <span
+                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[11px] font-bold ${
+                    done ? "bg-slate-400 text-white" : "border border-blue-400 text-transparent"
+                  }`}
+                >
+                  ✓
+                </span>
+                <span className={done ? "line-through" : "font-medium"}>{t}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {/* 회사 기본 정보 */}
       <div className="mt-5 rounded-3xl border border-slate-100 bg-white p-6 shadow-sm sm:p-8">

@@ -1,4 +1,5 @@
 import type { Customer } from "@/app/types";
+import { progressStars } from "@/app/lib/coach";
 
 // 고객(진단 결과 포함 또는 Mock)으로부터 상담 리포트 화면에 필요한 모델을 만든다.
 // 진단 데이터(diagnosisResult)가 있으면 풍부하게, 없으면(Mock) 안전한 기본값으로 구성.
@@ -24,6 +25,11 @@ export interface ReportModel {
   diagnosisDate: string;
   topAgency: string;
   score: number;
+  // 대표님 한 페이지 요약
+  stars: number;
+  estimatedPeriod: string;
+  riskKeyword: string;
+  keyPrep: string;
   coreStrategy: string;
   biggestRisk: string;
   nextAction: string;
@@ -33,6 +39,20 @@ export interface ReportModel {
   supportPrograms: ReportSupportProgram[];
   extraUpsells: string[];
   disclaimer: string;
+}
+
+function estimatePeriod(agency: string): string {
+  if (agency.includes("중소벤처") || agency.includes("기술보증")) return "4~8주";
+  if (agency.includes("소상공인") || agency.includes("재단")) return "2~4주";
+  return "3~5주";
+}
+
+function riskKeywordOf(risk: string): string {
+  if (risk.includes("신용")) return "대표 신용";
+  if (risk.includes("부채")) return "부채비율";
+  if (risk.includes("체납") || risk.includes("세금")) return "세금 체납";
+  if (risk.includes("업력") || risk.includes("실적")) return "짧은 업력·실적";
+  return "사전 점검 필요";
 }
 
 const DEFAULT_DOCUMENTS = [
@@ -133,6 +153,9 @@ export function buildReportModel(customer: Customer): ReportModel {
     (u) => !matchedKeys.some((k) => u.includes(k)),
   );
 
+  const keyPrepDoc =
+    documents.find((d) => d.includes("재무")) ?? documents[0] ?? "사업자등록증";
+
   return {
     companyName: customer.companyName,
     industry: customer.industry,
@@ -140,6 +163,10 @@ export function buildReportModel(customer: Customer): ReportModel {
     diagnosisDate: customer.lastContactedAt || customer.updatedAt,
     topAgency: customer.recommendedAgency,
     score: customer.score,
+    stars: progressStars(customer.score),
+    estimatedPeriod: estimatePeriod(customer.recommendedAgency),
+    riskKeyword: riskKeywordOf(biggestRisk),
+    keyPrep: keyPrepDoc,
     coreStrategy,
     biggestRisk,
     nextAction: customer.nextAction,

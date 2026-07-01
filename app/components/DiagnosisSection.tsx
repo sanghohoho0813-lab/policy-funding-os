@@ -90,7 +90,7 @@ export default function DiagnosisSection({
 
       {result && (
         <div ref={resultRef} id="result" className="mt-14 scroll-mt-24">
-          <ResultCard result={result} />
+          <ResultCard input={input} result={result} />
           <SaveCustomerBar key={runId} input={input} result={result} />
         </div>
       )}

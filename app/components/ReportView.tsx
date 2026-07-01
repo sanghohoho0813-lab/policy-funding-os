@@ -82,6 +82,44 @@ function ReportDocument({ customer }: { customer: Customer }) {
           </div>
         </div>
 
+        {/* 대표님 한 페이지 요약 (30초 이해용) */}
+        <div className="report-section border-b border-slate-100 bg-blue-50/40 px-8 py-7">
+          <p className="text-sm font-bold text-blue-700">대표님 요약</p>
+          <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-5">
+            <div>
+              <p className="text-xs font-semibold text-slate-500">추천기관</p>
+              <p className="mt-1 text-sm font-bold text-slate-900">{r.topAgency}</p>
+              <p className="text-amber-400" aria-label={`${r.stars}점`}>
+                {"★".repeat(r.stars)}
+                <span className="text-slate-300">{"★".repeat(5 - r.stars)}</span>
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-slate-500">가능성</p>
+              <p className="mt-1 text-2xl font-bold text-blue-700">
+                {r.score}
+                <span className="text-sm text-slate-400">점</span>
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-slate-500">예상 진행기간</p>
+              <p className="mt-1 text-lg font-bold text-slate-900">
+                {r.estimatedPeriod}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-slate-500">핵심 리스크</p>
+              <p className="mt-1 text-sm font-bold text-amber-700">
+                {r.riskKeyword}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-slate-500">필수 준비</p>
+              <p className="mt-1 text-sm font-bold text-slate-900">{r.keyPrep}</p>
+            </div>
+          </div>
+        </div>
+
         <div className="space-y-8 px-8 py-8">
           {/* 섹션 1. 종합 진단 요약 */}
           <section className="report-section">
