@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import DiagnosisSection from "./components/DiagnosisSection";
+import { SampleButton, StartButton } from "./components/HeroActions";
 
 const problems = [
   {
@@ -91,12 +93,9 @@ export default function Home() {
             </span>
             <span className="text-lg">Policy Funding OS</span>
           </div>
-          <a
-            href="#cta"
-            className="rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
-          >
+          <StartButton className="rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700">
             무료 체험 시작
-          </a>
+          </StartButton>
         </div>
       </header>
 
@@ -117,18 +116,12 @@ export default function Home() {
             더 많은 계약과 더 높은 고객 만족도를 만들어주는 AI OS
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <a
-              href="#cta"
-              className="w-full rounded-xl bg-blue-600 px-8 py-4 text-base font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 sm:w-auto"
-            >
+            <StartButton className="w-full rounded-xl bg-blue-600 px-8 py-4 text-base font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 sm:w-auto">
               AI 진단 시작하기
-            </a>
-            <a
-              href="#features"
-              className="w-full rounded-xl border border-slate-200 bg-white px-8 py-4 text-base font-semibold text-slate-700 transition-colors hover:bg-slate-50 sm:w-auto"
-            >
+            </StartButton>
+            <SampleButton className="w-full rounded-xl border border-slate-200 bg-white px-8 py-4 text-base font-semibold text-slate-700 transition-colors hover:bg-slate-50 sm:w-auto">
               샘플 고객 체험하기
-            </a>
+            </SampleButton>
           </div>
         </div>
       </Section>
@@ -205,6 +198,9 @@ export default function Home() {
         </div>
       </Section>
 
+      {/* AI 진단 시작 (인터랙티브 MVP) */}
+      <DiagnosisSection />
+
       {/* ⑤ CTA */}
       <Section id="cta">
         <div className="rounded-3xl bg-blue-600 px-6 py-16 text-center text-white sm:py-20">
@@ -215,12 +211,9 @@ export default function Home() {
             지금 Policy Funding OS로 더 많은 계약과 더 높은 고객 만족도를 경험하세요.
           </p>
           <div className="mt-8">
-            <a
-              href="#"
-              className="inline-block rounded-xl bg-white px-8 py-4 text-base font-semibold text-blue-600 shadow-sm transition-colors hover:bg-blue-50"
-            >
+            <StartButton className="inline-block rounded-xl bg-white px-8 py-4 text-base font-semibold text-blue-600 shadow-sm transition-colors hover:bg-blue-50">
               무료 체험 시작
-            </a>
+            </StartButton>
           </div>
         </div>
       </Section>
