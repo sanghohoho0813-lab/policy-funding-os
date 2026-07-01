@@ -113,6 +113,37 @@ export interface DiagnosisResult {
   followUpMessage: string;
 }
 
+// 고객(CRM) 진행 단계 및 고객 레코드 — Mock 대시보드/상세에서 사용.
+// 다음 단계에서 Supabase 연동 시 그대로 테이블 컬럼으로 매핑할 수 있도록 잡아둔다.
+export type CustomerStage =
+  | "신규 DB"
+  | "1차 상담 완료"
+  | "계약 검토"
+  | "서류 요청"
+  | "서류 대기"
+  | "접수 준비"
+  | "접수 완료"
+  | "심사 중"
+  | "승인"
+  | "보류"
+  | "실패"
+  | "재접촉 예정";
+
+export interface Customer {
+  id: string;
+  companyName: string;
+  industry: string;
+  businessType: BusinessType;
+  recommendedAgency: string;
+  score: number;
+  stage: CustomerStage;
+  nextAction: string;
+  lastContactedAt: string;
+  updatedAt: string;
+  upsellOpportunities: string[];
+  memo: string;
+}
+
 // 폼 select/chip 렌더링에 재사용하는 옵션 목록
 export const BUSINESS_TYPES: BusinessType[] = ["개인사업자", "법인사업자"];
 export const YEARS_OPTIONS: YearsInBusiness[] = [

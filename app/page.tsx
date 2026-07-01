@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
-import DiagnosisSection from "./components/DiagnosisSection";
-import { SampleButton, StartButton } from "./components/HeroActions";
+import Link from "next/link";
+import NavBar from "./components/NavBar";
+import Footer from "./components/Footer";
 
 const problems = [
   {
@@ -84,20 +85,7 @@ function Section({
 export default function Home() {
   return (
     <main className="flex-1 bg-white text-slate-900">
-      {/* Header */}
-      <header className="sticky top-0 z-10 border-b border-slate-100 bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-2 font-semibold">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold text-white">
-              PF
-            </span>
-            <span className="text-lg">Policy Funding OS</span>
-          </div>
-          <StartButton className="rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700">
-            무료 체험 시작
-          </StartButton>
-        </div>
-      </header>
+      <NavBar />
 
       {/* ① Hero */}
       <Section className="pt-16 text-center sm:pt-24">
@@ -116,12 +104,18 @@ export default function Home() {
             더 많은 계약과 더 높은 고객 만족도를 만들어주는 AI OS
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <StartButton className="w-full rounded-xl bg-blue-600 px-8 py-4 text-base font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 sm:w-auto">
+            <Link
+              href="/diagnosis"
+              className="w-full rounded-xl bg-blue-600 px-8 py-4 text-base font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 sm:w-auto"
+            >
               AI 진단 시작하기
-            </StartButton>
-            <SampleButton className="w-full rounded-xl border border-slate-200 bg-white px-8 py-4 text-base font-semibold text-slate-700 transition-colors hover:bg-slate-50 sm:w-auto">
+            </Link>
+            <Link
+              href="/diagnosis?sample=1"
+              className="w-full rounded-xl border border-slate-200 bg-white px-8 py-4 text-base font-semibold text-slate-700 transition-colors hover:bg-slate-50 sm:w-auto"
+            >
               샘플 고객 체험하기
-            </SampleButton>
+            </Link>
           </div>
         </div>
       </Section>
@@ -198,9 +192,6 @@ export default function Home() {
         </div>
       </Section>
 
-      {/* AI 진단 시작 (인터랙티브 MVP) */}
-      <DiagnosisSection />
-
       {/* ⑤ CTA */}
       <Section id="cta">
         <div className="rounded-3xl bg-blue-600 px-6 py-16 text-center text-white sm:py-20">
@@ -211,25 +202,17 @@ export default function Home() {
             지금 Policy Funding OS로 더 많은 계약과 더 높은 고객 만족도를 경험하세요.
           </p>
           <div className="mt-8">
-            <StartButton className="inline-block rounded-xl bg-white px-8 py-4 text-base font-semibold text-blue-600 shadow-sm transition-colors hover:bg-blue-50">
+            <Link
+              href="/diagnosis"
+              className="inline-block rounded-xl bg-white px-8 py-4 text-base font-semibold text-blue-600 shadow-sm transition-colors hover:bg-blue-50"
+            >
               무료 체험 시작
-            </StartButton>
+            </Link>
           </div>
         </div>
       </Section>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-100 px-6 py-10">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 text-sm text-slate-500 sm:flex-row">
-          <div className="flex items-center gap-2 font-semibold text-slate-700">
-            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-blue-600 text-xs font-bold text-white">
-              PF
-            </span>
-            Policy Funding OS
-          </div>
-          <p>© 2026 Policy Funding OS. All rights reserved.</p>
-        </div>
-      </footer>
+      <Footer />
     </main>
   );
 }
