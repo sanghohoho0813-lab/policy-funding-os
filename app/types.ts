@@ -97,6 +97,34 @@ export interface UpsellSuggestion {
   desc: string;
 }
 
+// ── Knowledge Engine 산출물 (추가 필드는 모두 옵셔널 — 기존 UI는 무시하므로 안전) ──
+export type RiskLevel = "매우 낮음" | "낮음" | "보통" | "높음" | "매우 높음";
+
+export interface RiskAssessment {
+  level: RiskLevel;
+  score: number; // 0(안전)~100(위험)
+  factors: string[];
+  explanation: string;
+}
+
+export interface ConfidenceAssessment {
+  score: number; // 0~100 (AI 확신도)
+  level: "매우 높음" | "높음" | "보통" | "낮음";
+  reasons: string[];
+}
+
+export interface RoadmapStep {
+  offsetLabel: string; // "오늘", "3일", "7일" ...
+  offsetDays: number;
+  task: string;
+  phase: "30일" | "60일" | "90일";
+}
+
+export interface Roadmap {
+  steps: RoadmapStep[];
+  phases: { d30: string[]; d60: string[]; d90: string[] };
+}
+
 export interface DiagnosisResult {
   companyName: string;
   overallScore: number;
@@ -111,6 +139,12 @@ export interface DiagnosisResult {
   upsells: UpsellSuggestion[];
   documentMessage: string;
   followUpMessage: string;
+  // Knowledge Engine 추가 산출물 (옵셔널)
+  reasoning?: string;
+  risk?: RiskAssessment;
+  confidence?: ConfidenceAssessment;
+  roadmap?: Roadmap;
+  industryCategory?: IndustryCategory;
 }
 
 // 고객(CRM) 진행 단계 및 고객 레코드 — Mock 대시보드/상세에서 사용.
