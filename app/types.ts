@@ -142,7 +142,26 @@ export interface Customer {
   updatedAt: string;
   upsellOpportunities: string[];
   memo: string;
+  // 진단에서 저장된 고객만 보유 (Mock 고객에는 없음)
+  diagnosisInput?: DiagnosisInput;
+  diagnosisResult?: DiagnosisResult;
 }
+
+// 진행단계 드롭다운/필터에 재사용
+export const CUSTOMER_STAGES: CustomerStage[] = [
+  "신규 DB",
+  "1차 상담 완료",
+  "계약 검토",
+  "서류 요청",
+  "서류 대기",
+  "접수 준비",
+  "접수 완료",
+  "심사 중",
+  "승인",
+  "보류",
+  "실패",
+  "재접촉 예정",
+];
 
 // 폼 select/chip 렌더링에 재사용하는 옵션 목록
 export const BUSINESS_TYPES: BusinessType[] = ["개인사업자", "법인사업자"];
