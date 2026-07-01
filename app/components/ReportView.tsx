@@ -152,6 +152,80 @@ function ReportDocument({ customer }: { customer: Customer }) {
             </div>
           </section>
 
+          {/* 섹션 1-1. 인콜 체크 요약 (진단 입력이 있는 고객만) */}
+          {r.incall && (
+            <section className="report-section">
+              <h2 className="text-lg font-bold text-slate-900">
+                1-1. 인콜 체크 요약
+              </h2>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl bg-slate-50 p-4">
+                  <p className="text-xs font-semibold text-slate-500">
+                    대표자 동종업계 경력
+                  </p>
+                  <p className="mt-1 text-sm font-bold text-slate-800">
+                    {r.incall.ceoCareer}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-slate-50 p-4">
+                  <p className="text-xs font-semibold text-slate-500">
+                    매출 체급
+                  </p>
+                  <p className="mt-1 text-sm font-bold text-slate-800">
+                    {r.incall.revenueTier}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-3 rounded-2xl bg-amber-50 p-4">
+                <p className="text-xs font-semibold text-amber-700">
+                  신용 · 체납 · 기대출 리스크
+                </p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {r.incall.creditRisk.map((c) => (
+                    <span
+                      key={c}
+                      className="rounded-full bg-white px-2.5 py-0.5 text-xs font-medium text-amber-900 ring-1 ring-amber-200"
+                    >
+                      {c}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              {r.incall.bonusItems.length > 0 && (
+                <div className="mt-3 rounded-2xl bg-blue-50/60 p-4">
+                  <p className="text-xs font-semibold text-blue-700">
+                    가점 요소 (면담 시 증빙 지참)
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {r.incall.bonusItems.map((b) => (
+                      <span
+                        key={b}
+                        className="rounded-full bg-white px-2.5 py-0.5 text-xs font-medium text-blue-800 ring-1 ring-blue-200"
+                      >
+                        {b}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {r.incall.deprioritized.length > 0 && (
+                <div className="mt-3 rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                  <p className="text-xs font-semibold text-slate-500">
+                    후순위 기관과 사유
+                  </p>
+                  <ul className="mt-2 space-y-1 text-xs leading-5 text-slate-600">
+                    {r.incall.deprioritized.map((d) => (
+                      <li key={d.name}>
+                        <span className="font-semibold">{d.name}</span> —{" "}
+                        {d.reason}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </section>
+          )}
+
           {/* 섹션 2. 추천 기관 TOP 3 */}
           <section className="report-section">
             <h2 className="text-lg font-bold text-slate-900">

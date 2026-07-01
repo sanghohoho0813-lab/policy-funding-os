@@ -239,7 +239,7 @@ export default function ResultCard({
           {result.agencies.map((a, idx) => (
             <div key={a.name} className="rounded-xl border border-slate-100 bg-slate-50 p-4">
               <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <span
                     className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold text-white ${
                       rankBadge[idx] ?? "bg-slate-400"
@@ -248,11 +248,21 @@ export default function ResultCard({
                     {a.rank}
                   </span>
                   <span className="font-bold">{a.name}</span>
+                  {a.exceptionalReview && (
+                    <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-700">
+                      예외 검토
+                    </span>
+                  )}
                 </div>
                 <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700">
                   적합도 {a.score}
                 </span>
               </div>
+              {a.exceptionalReview && a.exceptionalNote && (
+                <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">
+                  {a.exceptionalNote}
+                </p>
+              )}
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-lg border border-green-100 bg-green-50/50 p-3">
                   <p className="text-xs font-bold text-green-700">👍 좋은 이유</p>
@@ -280,6 +290,26 @@ export default function ResultCard({
             </div>
           ))}
         </div>
+
+        {/* 후순위/제외 기관 사유 */}
+        {result.deprioritized && result.deprioritized.length > 0 && (
+          <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <p className="text-xs font-bold text-slate-500">
+              🚫 이번 추천에서 후순위로 밀린 기관과 그 이유
+            </p>
+            <ul className="mt-2 space-y-1.5 text-sm text-slate-600">
+              {result.deprioritized.map((d) => (
+                <li key={d.name} className="flex gap-1.5">
+                  <span className="shrink-0 font-semibold text-slate-500">
+                    {d.name}
+                  </span>
+                  <span className="text-slate-400">—</span>
+                  <span>{d.reason}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </Card>
 
       {/* AI 상담 코치 (채팅형) */}

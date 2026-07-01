@@ -16,11 +16,43 @@ function preferAgency(scripts: string[], agency: string, n: number): string[] {
   return [...hit, ...rest].slice(0, n);
 }
 
+// ── 인콜 조건부 확인 질문 (9차: 입력값에 따라 생성) ──
+function conditionalQuestions(profile: Profile, topAgency: string): string[] {
+  const q: string[] = [];
+  const i = profile.input;
+
+  if (profile.revenueEok < 5 && topAgency !== "신용보증기금") {
+    q.push(
+      "매출 5억 미만이라 신보 진행보다는 지역신보·소진공이 현실적인지 먼저 확인하세요.",
+    );
+  }
+  if (profile.shortCareer) {
+    q.push("대표가 이 업을 왜 할 수 있는지 — 경력·스토리를 먼저 확인하세요.");
+  }
+  if (profile.facilityIntent) {
+    q.push("시설자금이면 견적서·기계(설비) 사진·자기자금 준비 여부를 확인하세요.");
+  }
+  if (profile.lowCredit) {
+    q.push("최근 연체, 카드론, 2금융권 사용 여부를 반드시 확인하세요.");
+  }
+  if (i.employees !== "0명") {
+    q.push("4대보험 가입자명부를 받고, 고용지원금 가능성도 함께 확인하세요.");
+  }
+  if (i.taxArrears === "미확인" || i.taxArrears === undefined) {
+    q.push("국세·지방세 체납 여부를 확인하세요 (체납 시 접수 자체가 막힙니다).");
+  }
+  return q;
+}
+
 export function generateScripts(
+  profile: Profile,
   topAgency: string,
   kb: KnowledgeBase,
 ): CoachContent {
-  const questions = group(kb, "firstConsultQuestions").slice(0, 5);
+  // 조건부 확인 질문을 먼저, 이후 인콜 기본 질문으로 채운다 (총 5개)
+  const conditional = conditionalQuestions(profile, topAgency);
+  const base = group(kb, "firstConsultQuestions");
+  const questions = [...conditional, ...base.filter((b) => !conditional.includes(b))].slice(0, 5);
   const keyPoints = preferAgency(group(kb, "agencyRecommendation"), topAgency, 3);
 
   const docReq = group(kb, "documentRequest");

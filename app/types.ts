@@ -27,6 +27,87 @@ export type Strength =
   | "수출"
   | "없음";
 
+// ── 인콜 질문지 확장 필드 타입 (9차: 인콜 스크립트 + 종합진단표 반영) ──
+export type CeoCareer = "1년 미만" | "1~3년" | "3~5년" | "5~10년" | "10년 이상" | "미확인";
+export type CeoAge = "만 39세 이하" | "40~49세" | "50세 이상" | "미확인";
+export type Premises = "자가" | "임차" | "자택" | "공유오피스" | "미확인";
+export type ActualBusiness =
+  | "제조"
+  | "도소매"
+  | "음식점·카페"
+  | "서비스"
+  | "건설·인테리어"
+  | "IT·플랫폼"
+  | "기타";
+export type RevenueTrend3y = "증가" | "유지" | "감소" | "신규라 없음" | "미확인";
+export type LastYearRevenue =
+  | "1억 미만"
+  | "1~3억"
+  | "3~5억"
+  | "5~10억"
+  | "10~30억"
+  | "30억 이상"
+  | "미확인";
+export type ThisYearTrend = "전년보다 증가" | "비슷" | "감소" | "미확인";
+export type NetProfit = "흑자" | "적자" | "손익분기" | "미확인";
+export type CreditBand =
+  | "900점 이상"
+  | "800점대"
+  | "700점대"
+  | "600점대"
+  | "600점 미만"
+  | "미확인";
+export type YesNoUnknown = "없음" | "있음" | "미확인";
+export type DebtRelief = "없음" | "신용회복" | "회생" | "파산" | "미확인";
+export type ExistingDebtLevel =
+  | "없음"
+  | "매출 대비 낮음"
+  | "매출 대비 보통"
+  | "매출 대비 높음"
+  | "매출 초과"
+  | "미확인";
+export type SecondFinance = "없음" | "일부 있음" | "많음" | "미확인";
+export type WorkingCapitalUse =
+  | "인건비"
+  | "원재료"
+  | "광고비"
+  | "임차료"
+  | "고금리 대환"
+  | "재고매입"
+  | "기타"
+  | "해당없음";
+export type FacilityUse =
+  | "기계구입"
+  | "차량구입"
+  | "공장매입"
+  | "인테리어"
+  | "설비교체"
+  | "해당없음";
+export type FundingSize = "3천 이하" | "3천~5천" | "5천~1억" | "1억~2억" | "2억 이상" | "미확인";
+export type SelfFunding = "있음" | "일부 있음" | "없음" | "미확인";
+export type HiringPlan = "있음" | "없음" | "미확인";
+export type YouthEmployment = "있음" | "없음" | "예정" | "미확인";
+export type ClarityLevel = "명확함" | "보통" | "불명확" | "미확인";
+export type BizPlanReadiness = "없음" | "초안 있음" | "자료 충분" | "미확인";
+// 가점/강점 (bonus-points.json formKey 항목, 복수 선택)
+export type BonusItem =
+  | "특허 보유"
+  | "기업부설연구소 보유"
+  | "벤처기업"
+  | "이노비즈"
+  | "메인비즈"
+  | "여성기업"
+  | "사회적기업"
+  | "수출 실적"
+  | "정부 R&D 성공"
+  | "법인전환 기업"
+  | "만39세 이하 청년기업"
+  | "연구개발비 비중 5% 이상"
+  | "매출 또는 영업이익 10% 이상 증가"
+  | "노란우산공제"
+  | "고용지원금 참여"
+  | "없음";
+
 export interface DiagnosisInput {
   companyName: string;
   industry: string;
@@ -38,6 +119,42 @@ export interface DiagnosisInput {
   purpose: FundPurpose;
   strengths: Strength[];
   memo: string;
+  // ── 인콜 확장 필드 (전부 옵셔널 — 기존 저장 고객 호환) ──
+  // A. 기본 정보
+  ceoCareer?: CeoCareer;
+  ceoAge?: CeoAge;
+  premises?: Premises;
+  actualBusiness?: ActualBusiness;
+  // B. 매출 상세
+  revenueTrend3y?: RevenueTrend3y;
+  lastYearRevenue?: LastYearRevenue;
+  thisYearTrend?: ThisYearTrend;
+  netProfit?: NetProfit;
+  // C. 신용/부채/체납
+  creditBand?: CreditBand;
+  recentDelinquency?: YesNoUnknown;
+  debtRelief?: DebtRelief;
+  taxArrears?: YesNoUnknown;
+  insuranceArrears?: YesNoUnknown;
+  existingDebtLevel?: ExistingDebtLevel;
+  secondFinance?: SecondFinance;
+  // D. 자금 목적
+  workingCapitalUse?: WorkingCapitalUse;
+  facilityUse?: FacilityUse;
+  fundingSize?: FundingSize;
+  selfFunding?: SelfFunding;
+  // E. 고용/운영 (직원 수는 기존 employees 필드를 4대보험 기준으로 사용)
+  hiringPlan?: HiringPlan;
+  youthEmployment?: YouthEmployment;
+  familyStaff?: YesNoUnknown;
+  // F. 가점/강점 (복수 선택)
+  bonusItems?: BonusItem[];
+  // G. 사업계획/실사 준비
+  fundUseClarity?: ClarityLevel;
+  growthPlan?: ClarityLevel;
+  majorClients?: YesNoUnknown;
+  assetEvidence?: YesNoUnknown;
+  bizPlanReadiness?: BizPlanReadiness;
 }
 
 export interface AgencyRecommendation {
@@ -46,6 +163,15 @@ export interface AgencyRecommendation {
   score: number;
   reasons: string[];
   cautions: string[];
+  // 예외 검토 (원칙적 후순위지만 강점이 많아 예외적으로 노출된 경우)
+  exceptionalReview?: boolean;
+  exceptionalNote?: string;
+}
+
+// TOP3 에 들지 못했거나 후순위로 밀린 기관의 사유
+export interface DeprioritizedAgency {
+  name: string;
+  reason: string;
 }
 
 export interface CoachContent {
@@ -145,6 +271,8 @@ export interface DiagnosisResult {
   confidence?: ConfidenceAssessment;
   roadmap?: Roadmap;
   industryCategory?: IndustryCategory;
+  // 후순위/제외 기관 사유 (9차: 기관 적격성 보정)
+  deprioritized?: DeprioritizedAgency[];
 }
 
 // 고객(CRM) 진행 단계 및 고객 레코드 — Mock 대시보드/상세에서 사용.
@@ -266,5 +394,46 @@ export const STRENGTH_OPTIONS: Strength[] = [
   "청년대표",
   "고용증가",
   "수출",
+  "없음",
+];
+
+// ── 인콜 확장 필드 옵션 목록 (폼 렌더링용) ──
+export const CEO_CAREER_OPTIONS: CeoCareer[] = ["1년 미만", "1~3년", "3~5년", "5~10년", "10년 이상", "미확인"];
+export const CEO_AGE_OPTIONS: CeoAge[] = ["만 39세 이하", "40~49세", "50세 이상", "미확인"];
+export const PREMISES_OPTIONS: Premises[] = ["자가", "임차", "자택", "공유오피스", "미확인"];
+export const ACTUAL_BUSINESS_OPTIONS: ActualBusiness[] = ["제조", "도소매", "음식점·카페", "서비스", "건설·인테리어", "IT·플랫폼", "기타"];
+export const REVENUE_TREND_3Y_OPTIONS: RevenueTrend3y[] = ["증가", "유지", "감소", "신규라 없음", "미확인"];
+export const LAST_YEAR_REVENUE_OPTIONS: LastYearRevenue[] = ["1억 미만", "1~3억", "3~5억", "5~10억", "10~30억", "30억 이상", "미확인"];
+export const THIS_YEAR_TREND_OPTIONS: ThisYearTrend[] = ["전년보다 증가", "비슷", "감소", "미확인"];
+export const NET_PROFIT_OPTIONS: NetProfit[] = ["흑자", "적자", "손익분기", "미확인"];
+export const CREDIT_BAND_OPTIONS: CreditBand[] = ["900점 이상", "800점대", "700점대", "600점대", "600점 미만", "미확인"];
+export const YES_NO_UNKNOWN_OPTIONS: YesNoUnknown[] = ["없음", "있음", "미확인"];
+export const DEBT_RELIEF_OPTIONS: DebtRelief[] = ["없음", "신용회복", "회생", "파산", "미확인"];
+export const EXISTING_DEBT_LEVEL_OPTIONS: ExistingDebtLevel[] = ["없음", "매출 대비 낮음", "매출 대비 보통", "매출 대비 높음", "매출 초과", "미확인"];
+export const SECOND_FINANCE_OPTIONS: SecondFinance[] = ["없음", "일부 있음", "많음", "미확인"];
+export const WORKING_CAPITAL_USE_OPTIONS: WorkingCapitalUse[] = ["인건비", "원재료", "광고비", "임차료", "고금리 대환", "재고매입", "기타", "해당없음"];
+export const FACILITY_USE_OPTIONS: FacilityUse[] = ["기계구입", "차량구입", "공장매입", "인테리어", "설비교체", "해당없음"];
+export const FUNDING_SIZE_OPTIONS: FundingSize[] = ["3천 이하", "3천~5천", "5천~1억", "1억~2억", "2억 이상", "미확인"];
+export const SELF_FUNDING_OPTIONS: SelfFunding[] = ["있음", "일부 있음", "없음", "미확인"];
+export const HIRING_PLAN_OPTIONS: HiringPlan[] = ["있음", "없음", "미확인"];
+export const YOUTH_EMPLOYMENT_OPTIONS: YouthEmployment[] = ["있음", "없음", "예정", "미확인"];
+export const CLARITY_OPTIONS: ClarityLevel[] = ["명확함", "보통", "불명확", "미확인"];
+export const BIZ_PLAN_READINESS_OPTIONS: BizPlanReadiness[] = ["없음", "초안 있음", "자료 충분", "미확인"];
+export const BONUS_ITEM_OPTIONS: BonusItem[] = [
+  "특허 보유",
+  "기업부설연구소 보유",
+  "벤처기업",
+  "이노비즈",
+  "메인비즈",
+  "여성기업",
+  "사회적기업",
+  "수출 실적",
+  "정부 R&D 성공",
+  "법인전환 기업",
+  "만39세 이하 청년기업",
+  "연구개발비 비중 5% 이상",
+  "매출 또는 영업이익 10% 이상 증가",
+  "노란우산공제",
+  "고용지원금 참여",
   "없음",
 ];

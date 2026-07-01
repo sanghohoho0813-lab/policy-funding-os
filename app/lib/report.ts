@@ -18,6 +18,15 @@ export interface ReportSupportProgram {
   recommended: boolean;
 }
 
+// 인콜 체크 요약 (9차 — 진단 입력이 있는 고객만)
+export interface ReportIncall {
+  ceoCareer: string;
+  revenueTier: string;
+  creditRisk: string[];
+  bonusItems: string[];
+  deprioritized: { name: string; reason: string }[];
+}
+
 export interface ReportModel {
   companyName: string;
   industry: string;
@@ -39,6 +48,39 @@ export interface ReportModel {
   supportPrograms: ReportSupportProgram[];
   extraUpsells: string[];
   disclaimer: string;
+  incall: ReportIncall | null;
+}
+
+// 진단 입력(인콜 필드)에서 리포트용 요약 블록 생성
+function buildIncall(customer: Customer): ReportIncall | null {
+  const di = customer.diagnosisInput;
+  if (!di) return null;
+
+  const creditRisk: string[] = [];
+  const band = di.creditBand && di.creditBand !== "미확인" ? di.creditBand : null;
+  if (band) creditRisk.push(`신용 ${band}`);
+  else creditRisk.push(`신용 ${di.credit}`);
+  if (di.recentDelinquency === "있음") creditRisk.push("최근 연체 있음");
+  if (di.debtRelief && di.debtRelief !== "없음" && di.debtRelief !== "미확인")
+    creditRisk.push(`${di.debtRelief} 이력`);
+  if (di.taxArrears === "있음") creditRisk.push("국세/지방세 체납 ⚠");
+  if (di.insuranceArrears === "있음") creditRisk.push("4대보험 체납 ⚠");
+  if (di.existingDebtLevel && di.existingDebtLevel !== "미확인")
+    creditRisk.push(`기대출 ${di.existingDebtLevel}`);
+  if (di.secondFinance === "많음") creditRisk.push("2금융권·카드론 많음");
+
+  const revenueTier =
+    di.lastYearRevenue && di.lastYearRevenue !== "미확인"
+      ? `전년도 ${di.lastYearRevenue}`
+      : `연매출 ${di.revenue}`;
+
+  return {
+    ceoCareer: di.ceoCareer && di.ceoCareer !== "미확인" ? di.ceoCareer : "미확인",
+    revenueTier,
+    creditRisk,
+    bonusItems: (di.bonusItems ?? []).filter((b) => b !== "없음"),
+    deprioritized: customer.diagnosisResult?.deprioritized ?? [],
+  };
 }
 
 function estimatePeriod(agency: string): string {
@@ -176,5 +218,6 @@ export function buildReportModel(customer: Customer): ReportModel {
     supportPrograms,
     extraUpsells,
     disclaimer: REPORT_DISCLAIMER,
+    incall: buildIncall(customer),
   };
 }

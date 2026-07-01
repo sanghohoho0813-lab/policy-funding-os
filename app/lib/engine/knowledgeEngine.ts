@@ -266,15 +266,71 @@ export interface Profile {
   employeesIdx: number;
   creditIdx: number; // 0 낮음~3 우수, -1 알수없음
   tags: string[];
+  // ── 인콜 확장 파생 신호 (9차) ──
+  revenueEok: number; // 전년도 매출 추정(억) — lastYearRevenue 우선, 없으면 기존 revenue
+  lowCredit: boolean; // 낮음 / 600점대 이하 / 연체·신용회복 이력
+  veryLowCredit: boolean; // 600점 미만 / 회생·파산
+  highCredit: boolean; // 우수 / 800점대 이상
+  heavySecondFinance: boolean; // 2금융·카드론 많음
+  someSecondFinance: boolean;
+  taxBlocked: boolean; // 국세/지방세 또는 4대보험 체납 있음
+  debtHeavy: boolean; // 기대출 매출 대비 높음/초과
+  growth: boolean; // 3년 추세 증가 또는 올해 증가
+  smallFundOnly: boolean; // 필요자금 3천 이하 + 운전자금
+  facilityIntent: boolean; // 시설자금 목적(기계/공장/설비 등 포함)
+  hasCerts: boolean; // 벤처·이노비즈·메인비즈 등 인증 보유
+  bonusCount: number; // 선택된 가점 개수 (없음 제외)
+  shortCareer: boolean; // 대표 경력 3년 미만
+  hasMajorClients: boolean;
 }
 
+// lastYearRevenue(신규 구간) → 억 단위 추정
+const LAST_YEAR_REVENUE_EOK: Record<string, number> = {
+  "1억 미만": 0.5,
+  "1~3억": 2,
+  "3~5억": 4,
+  "5~10억": 7.5,
+  "10~30억": 20,
+  "30억 이상": 40,
+};
+// 기존 revenue(구 구간) → 억 단위 추정
+const LEGACY_REVENUE_EOK: Record<string, number> = {
+  "1억 미만": 0.5,
+  "1~5억": 3,
+  "5~10억": 7.5,
+  "10~30억": 20,
+  "30억 이상": 40,
+};
+
+// 가점 항목 → 매칭 키워드 (사례·기관 매칭에 합류)
+const BONUS_KEYWORD: Record<string, string> = {
+  "특허 보유": "특허",
+  "기업부설연구소 보유": "연구소",
+  벤처기업: "벤처",
+  이노비즈: "이노비즈",
+  메인비즈: "메인비즈",
+  "수출 실적": "수출",
+  "정부 R&D 성공": "R&D",
+  "만39세 이하 청년기업": "청년",
+};
+
 export function buildProfile(input: DiagnosisInput): Profile {
-  const industryCategory = inferIndustryCategory(input.industry);
+  // 실제 하는 일 분류(actualBusiness)가 있으면 업종 추론에 우선 반영
+  const industryText = [input.actualBusiness, input.industry]
+    .filter(Boolean)
+    .join(" ");
+  const industryCategory = inferIndustryCategory(industryText);
   const has = (s: Strength) => input.strengths.includes(s);
-  const strengthKeywords = input.strengths
-    .filter((s) => s !== "없음")
-    .map((s) => STRENGTH_KEYWORD[s])
-    .filter(Boolean);
+  const bonusItems = (input.bonusItems ?? []).filter((b) => b !== "없음");
+  const strengthKeywords = Array.from(
+    new Set([
+      ...input.strengths
+        .filter((s) => s !== "없음")
+        .map((s) => STRENGTH_KEYWORD[s])
+        .filter(Boolean),
+      ...bonusItems.map((b) => BONUS_KEYWORD[b]).filter(Boolean),
+    ]),
+  );
 
   const creditIdx =
     input.credit === "알 수 없음" ? -1 : CREDIT_OPTIONS.indexOf(input.credit) === 0
@@ -300,26 +356,108 @@ export function buildProfile(input: DiagnosisInput): Profile {
   if (has("고용증가")) tags.push("고용");
   if (has("제조업")) tags.push("제조");
 
+  // ── 인콜 확장 파생 신호 ──
+  const revenueEok =
+    input.lastYearRevenue && input.lastYearRevenue !== "미확인"
+      ? LAST_YEAR_REVENUE_EOK[input.lastYearRevenue]
+      : LEGACY_REVENUE_EOK[input.revenue] ?? 3;
+
+  const band = input.creditBand ?? "미확인";
+  const veryLowCredit =
+    band === "600점 미만" ||
+    input.debtRelief === "회생" ||
+    input.debtRelief === "파산";
+  const lowCredit =
+    veryLowCredit ||
+    input.credit === "낮음" ||
+    band === "600점대" ||
+    input.recentDelinquency === "있음" ||
+    input.debtRelief === "신용회복";
+  const highCredit =
+    !lowCredit &&
+    (input.credit === "우수" || band === "900점 이상" || band === "800점대");
+
+  const heavySecondFinance = input.secondFinance === "많음";
+  const someSecondFinance = input.secondFinance === "일부 있음";
+  const taxBlocked =
+    input.taxArrears === "있음" || input.insuranceArrears === "있음";
+  const debtHeavy =
+    input.existingDebtLevel === "매출 대비 높음" ||
+    input.existingDebtLevel === "매출 초과";
+  const growth =
+    input.revenueTrend3y === "증가" || input.thisYearTrend === "전년보다 증가";
+  const smallFundOnly =
+    input.fundingSize === "3천 이하" && input.purpose === "운전자금";
+  const facilityIntent =
+    input.purpose === "시설자금" ||
+    (input.facilityUse !== undefined && input.facilityUse !== "해당없음");
+  const hasCerts = bonusItems.some((b) =>
+    ["벤처기업", "이노비즈", "메인비즈", "여성기업", "사회적기업"].includes(b),
+  );
+  const shortCareer =
+    input.ceoCareer === "1년 미만" || input.ceoCareer === "1~3년";
+
+  if (lowCredit) tags.push("저신용");
+  if (heavySecondFinance || someSecondFinance) tags.push("2금융권");
+  if (heavySecondFinance) tags.push("카드론");
+  if (growth) tags.push("매출성장");
+  if (debtHeavy) tags.push("기대출과다");
+  if (input.workingCapitalUse === "고금리 대환") tags.push("고금리대환");
+  if (input.ceoAge === "만 39세 이하" || bonusItems.includes("만39세 이하 청년기업"))
+    tags.push("청년");
+
   return {
     input,
     industryCategory,
     companyName: input.companyName || "고객사",
     isCorp: input.businessType === "법인사업자",
     hasStrength: has,
-    hasTech: has("기술력") || has("특허") || has("연구소") || has("벤처"),
-    hasPatent: has("특허"),
-    hasLab: has("연구소"),
-    hasVenture: has("벤처"),
-    hasManufacturing: has("제조업"),
-    isYouth: has("청년대표"),
-    hasEmploymentGrowth: has("고용증가"),
-    hasExport: has("수출"),
+    hasTech:
+      has("기술력") ||
+      has("특허") ||
+      has("연구소") ||
+      has("벤처") ||
+      bonusItems.some((b) =>
+        ["특허 보유", "기업부설연구소 보유", "벤처기업", "정부 R&D 성공", "연구개발비 비중 5% 이상"].includes(b),
+      ),
+    hasPatent: has("특허") || bonusItems.includes("특허 보유"),
+    hasLab: has("연구소") || bonusItems.includes("기업부설연구소 보유"),
+    hasVenture: has("벤처") || bonusItems.includes("벤처기업"),
+    hasManufacturing:
+      has("제조업") ||
+      input.actualBusiness === "제조" ||
+      industryCategory === "제조",
+    isYouth:
+      has("청년대표") ||
+      input.ceoAge === "만 39세 이하" ||
+      bonusItems.includes("만39세 이하 청년기업"),
+    hasEmploymentGrowth:
+      has("고용증가") ||
+      input.hiringPlan === "있음" ||
+      input.youthEmployment === "있음" ||
+      input.youthEmployment === "예정",
+    hasExport: has("수출") || bonusItems.includes("수출 실적"),
     strengthKeywords,
     yearsIdx: YEARS_OPTIONS.indexOf(input.years),
     revenueIdx: REVENUE_OPTIONS.indexOf(input.revenue),
     employeesIdx: EMPLOYEE_OPTIONS.indexOf(input.employees),
     creditIdx,
     tags: Array.from(new Set(tags)),
+    revenueEok,
+    lowCredit,
+    veryLowCredit,
+    highCredit,
+    heavySecondFinance,
+    someSecondFinance,
+    taxBlocked,
+    debtHeavy,
+    growth,
+    smallFundOnly,
+    facilityIntent,
+    hasCerts,
+    bonusCount: bonusItems.length,
+    shortCareer,
+    hasMajorClients: input.majorClients === "있음",
   };
 }
 
@@ -328,8 +466,11 @@ export function runKnowledgeDiagnosis(input: DiagnosisInput): DiagnosisResult {
   // 1) 전처리 + industryCategory
   const profile = buildProfile(input);
 
-  // 2) 기관 선택 (funding-agencies.json 기반)
-  const agencies = selectAgencies(profile, KB);
+  // 2) 기관 선택 (funding-agencies.json + agency-exclusion-rules.json)
+  const { recommendations: agencies, deprioritized } = selectAgencies(
+    profile,
+    KB,
+  );
   const topAgency = agencies[0]?.name ?? "신용보증기금";
   const second = agencies[1]?.name;
 
@@ -342,8 +483,8 @@ export function runKnowledgeDiagnosis(input: DiagnosisInput): DiagnosisResult {
   // 5) reasoning (사람처럼 설명)
   const reasoning = generateReasoning(profile, agencies, cases, risk, KB);
 
-  // 6) scripts + coachInsight (funding-scripts / contract-notices)
-  const coach = generateScripts(topAgency, KB);
+  // 6) scripts + coachInsight (funding-scripts / contract-notices / 인콜 조건부 질문)
+  const coach = generateScripts(profile, topAgency, KB);
   const coachInsight = buildCoachInsight(profile, risk, KB);
   const { documentMessage, followUpMessage } = generateMessages(
     profile,
@@ -402,6 +543,7 @@ export function runKnowledgeDiagnosis(input: DiagnosisInput): DiagnosisResult {
     confidence,
     roadmap,
     industryCategory: profile.industryCategory,
+    deprioritized,
   };
 }
 
