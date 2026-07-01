@@ -63,6 +63,33 @@ export interface SimilarCase {
   agency: string;
   approved: string;
   note: string;
+  lesson?: string;
+  matchRate?: number;
+}
+
+// 업종 대분류 (사례 매칭·기관 판단에 사용)
+export type IndustryCategory =
+  | "제조"
+  | "도소매"
+  | "음식/외식"
+  | "서비스"
+  | "IT/지식서비스"
+  | "건설/기타";
+
+// 김팀장 실전 코치 인사이트
+export interface CoachInsight {
+  firstChecks: string[];
+  risks: string[];
+  strategies: string[];
+  neverPromise: string[];
+}
+
+// 결과 최상단 종합진단 요약
+export interface DiagnosisSummary {
+  score: number;
+  topAgency: string;
+  coreStrategy: string;
+  biggestRisk: string;
 }
 
 export interface UpsellSuggestion {
@@ -75,6 +102,8 @@ export interface DiagnosisResult {
   overallScore: number;
   topAgency: string;
   nextAction: string;
+  summary: DiagnosisSummary;
+  coachInsight: CoachInsight;
   agencies: AgencyRecommendation[];
   coach: CoachContent;
   documents: string[];

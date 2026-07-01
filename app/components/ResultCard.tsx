@@ -73,6 +73,47 @@ const rankBadge = ["bg-blue-600", "bg-blue-400", "bg-slate-400"];
 export default function ResultCard({ result }: { result: DiagnosisResult }) {
   return (
     <div className="space-y-6">
+      {/* 종합진단 요약 (최상단) */}
+      <div className="rounded-3xl border-2 border-blue-100 bg-white p-6 shadow-sm sm:p-7">
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-blue-600 px-3 py-1 text-xs font-bold text-white">
+            종합진단 요약
+          </span>
+          <span className="text-sm font-medium text-slate-500">
+            {result.companyName}
+          </span>
+        </div>
+        <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-2xl bg-blue-50 p-4">
+            <p className="text-xs font-semibold text-blue-700">가능성 점수</p>
+            <p className="mt-1">
+              <span className="text-3xl font-bold text-blue-700">
+                {result.summary.score}
+              </span>
+              <span className="text-sm text-blue-400"> / 100</span>
+            </p>
+          </div>
+          <div className="rounded-2xl bg-slate-50 p-4">
+            <p className="text-xs font-semibold text-slate-500">추천 기관</p>
+            <p className="mt-1 text-lg font-bold text-slate-800">
+              {result.summary.topAgency}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-slate-50 p-4">
+            <p className="text-xs font-semibold text-slate-500">핵심 전략</p>
+            <p className="mt-1 text-sm font-medium leading-6 text-slate-700">
+              {result.summary.coreStrategy}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-amber-50 p-4">
+            <p className="text-xs font-semibold text-amber-700">가장 큰 리스크</p>
+            <p className="mt-1 text-sm font-medium leading-6 text-amber-900">
+              {result.summary.biggestRisk}
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* 요약 헤더 */}
       <div className="rounded-3xl bg-blue-600 p-6 text-white sm:p-8">
         <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
@@ -104,6 +145,60 @@ export default function ResultCard({ result }: { result: DiagnosisResult }) {
           </div>
         </div>
       </div>
+
+      {/* 김팀장 실전 코치 인사이트 */}
+      <Card title="김팀장 실전 코치 인사이트" emoji="🧭">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4">
+            <p className="text-sm font-bold text-blue-900">
+              ✅ 가장 먼저 확인할 것
+            </p>
+            <ul className="mt-2 space-y-1.5 text-sm text-slate-700">
+              {result.coachInsight.firstChecks.map((t) => (
+                <li key={t} className="flex gap-1.5">
+                  <span className="text-blue-500">•</span>
+                  {t}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded-xl border border-amber-100 bg-amber-50/60 p-4">
+            <p className="text-sm font-bold text-amber-900">⚠️ 리스크</p>
+            <ul className="mt-2 space-y-1.5 text-sm text-slate-700">
+              {result.coachInsight.risks.map((t) => (
+                <li key={t} className="flex gap-1.5">
+                  <span className="text-amber-500">•</span>
+                  {t}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded-xl border border-green-100 bg-green-50/50 p-4">
+            <p className="text-sm font-bold text-green-900">🎯 상담 전략</p>
+            <ul className="mt-2 space-y-1.5 text-sm text-slate-700">
+              {result.coachInsight.strategies.map((t) => (
+                <li key={t} className="flex gap-1.5">
+                  <span className="text-green-500">•</span>
+                  {t}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded-xl border border-red-100 bg-red-50/50 p-4">
+            <p className="text-sm font-bold text-red-900">
+              🚫 절대 약속하면 안 되는 것
+            </p>
+            <ul className="mt-2 space-y-1.5 text-sm text-slate-700">
+              {result.coachInsight.neverPromise.map((t) => (
+                <li key={t} className="flex gap-1.5">
+                  <span className="text-red-500">•</span>
+                  {t}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </Card>
 
       {/* 추천 기관 TOP 3 */}
       <Card title="추천 기관 TOP 3" emoji="🏦">
@@ -230,15 +325,25 @@ export default function ResultCard({ result }: { result: DiagnosisResult }) {
         </ul>
       </Card>
 
-      {/* 유사 사례 */}
-      <Card title="유사 사례" emoji="📚">
+      {/* 유사 사례 (전자책 승인 사례 DB 자동 매칭) */}
+      <Card title="유사 사례 (자동 매칭)" emoji="📚">
+        <p className="-mt-2 mb-4 text-sm text-slate-500">
+          입력하신 고객 정보와 가장 가까운 실제 승인 사례를 찾아드렸어요.
+        </p>
         <div className="grid gap-4 sm:grid-cols-3">
           {result.cases.map((c) => (
             <div
               key={c.title}
-              className="rounded-xl border border-slate-100 bg-slate-50 p-4"
+              className="flex flex-col rounded-xl border border-slate-100 bg-slate-50 p-4"
             >
-              <p className="text-sm font-bold text-slate-800">{c.title}</p>
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-sm font-bold text-slate-800">{c.title}</p>
+                {typeof c.matchRate === "number" && (
+                  <span className="shrink-0 rounded-full bg-blue-600 px-2 py-0.5 text-[11px] font-bold text-white">
+                    {c.matchRate}%
+                  </span>
+                )}
+              </div>
               <div className="mt-2 space-y-0.5 text-xs text-slate-500">
                 <p>{c.industry}</p>
                 <p>
@@ -254,6 +359,11 @@ export default function ResultCard({ result }: { result: DiagnosisResult }) {
                 </span>
               </div>
               <p className="mt-3 text-xs leading-5 text-slate-600">{c.note}</p>
+              {c.lesson && (
+                <p className="mt-3 rounded-lg bg-white px-3 py-2 text-xs leading-5 text-slate-700 ring-1 ring-slate-100">
+                  💡 {c.lesson}
+                </p>
+              )}
             </div>
           ))}
         </div>
