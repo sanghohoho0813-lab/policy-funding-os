@@ -176,12 +176,20 @@ function CustomerEditor({
         >
           ← 고객관리로
         </Link>
-        <Link
-          href="/diagnosis"
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
-        >
-          진단 다시하기
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/customers/${customer.id}/report`}
+            className="rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-50"
+          >
+            상담 리포트 보기
+          </Link>
+          <Link
+            href="/diagnosis"
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+          >
+            진단 다시하기
+          </Link>
+        </div>
       </div>
 
       {/* 저장 안내 */}

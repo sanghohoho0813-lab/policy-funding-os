@@ -20,3 +20,42 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
 }
+
+/* 상담 리포트 인쇄/PDF 최적화 (A4 1~2장, 깔끔하게) */
+@media print {
+  @page {
+    margin: 14mm;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+  }
+
+  /* 네비게이션·버튼 등 인쇄 불필요 요소 숨김 */
+  .no-print {
+    display: none !important;
+  }
+
+  .report-root {
+    background: #ffffff !important;
+    padding: 0 !important;
+  }
+
+  /* 컬러 포인트가 인쇄에서도 유지되도록 */
+  .report-root,
+  .report-card {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* 카드 그림자 최소화 + 페이지 잘림 최소화 */
+  .report-card {
+    box-shadow: none !important;
+    border: 1px solid #e5e7eb !important;
+  }
+
+  .report-section {
+    break-inside: avoid;
+  }
+}
