@@ -1,4 +1,10 @@
-import type { Customer, PlanDraft } from "@/app/types";
+import type {
+  Customer,
+  LikelihoodLevel,
+  PlanDraft,
+  SpecialTrackCandidate,
+} from "@/app/types";
+import { likelihoodOf } from "@/app/types";
 import { progressStars } from "@/app/lib/coach";
 
 // 고객(진단 결과 포함 또는 Mock)으로부터 상담 리포트 화면에 필요한 모델을 만든다.
@@ -50,6 +56,9 @@ export interface ReportModel {
   disclaimer: string;
   incall: ReportIncall | null;
   planDraft: PlanDraft | null;
+  // 11차: 3단계 가능성 + 세부 자금 트랙
+  likelihood: LikelihoodLevel;
+  specialTracks: SpecialTrackCandidate[];
 }
 
 // 진단 입력(인콜 필드)에서 리포트용 요약 블록 생성
@@ -221,5 +230,13 @@ export function buildReportModel(customer: Customer): ReportModel {
     disclaimer: REPORT_DISCLAIMER,
     incall: buildIncall(customer),
     planDraft: customer.diagnosisResult?.planDraft ?? null,
+    likelihood:
+      customer.likelihoodLevel ??
+      customer.diagnosisResult?.likelihoodLevel ??
+      likelihoodOf(customer.score),
+    specialTracks:
+      customer.specialFundingTracks ??
+      customer.diagnosisResult?.specialTracks ??
+      [],
   };
 }

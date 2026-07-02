@@ -51,6 +51,8 @@ import { generatePlanQuestions } from "./questionEngine";
 import { buildReviewSimulation } from "./reviewEngine";
 import { checkDocuments } from "./documentEngine";
 import { getGrowthPoints } from "./growthEngine";
+import { detectSpecialTracks } from "./trackEngine";
+import { likelihoodOf } from "@/app/types";
 
 // ── knowledge 스키마 타입 ──
 export interface AgencyRule {
@@ -520,6 +522,9 @@ export function runKnowledgeDiagnosis(input: DiagnosisInput): DiagnosisResult {
   const reviewSim = buildReviewSimulation(profile, topAgency);
   const documentChecks = checkDocuments(profile);
 
+  // 8-2.5) 세부 자금 트랙 후보 (11차 — special-funding-tracks.json)
+  const specialTracks = detectSpecialTracks(profile);
+
   // 8-3) 김팀장 AI 한마디 (작업 12) — 사업계획 완성도 기반
   const weak2 = planScore.weakPoints
     .slice(0, 2)
@@ -585,6 +590,8 @@ export function runKnowledgeDiagnosis(input: DiagnosisInput): DiagnosisResult {
     documentChecks,
     growthKeywords: growth.keywords,
     coachMessage,
+    likelihoodLevel: likelihoodOf(overallScore),
+    specialTracks,
   };
 }
 

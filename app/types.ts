@@ -155,6 +155,14 @@ export interface DiagnosisInput {
   majorClients?: YesNoUnknown;
   assetEvidence?: YesNoUnknown;
   bizPlanReadiness?: BizPlanReadiness;
+  // H. 심층 진단 전용 필드 (11차 — 조건부 섹션)
+  techClarity?: ClarityLevel; // 기술성 설명 가능 여부
+  quoteReady?: YesNoUnknown; // 기계/설비 견적서 보유
+  productivityEvidence?: YesNoUnknown; // 생산성 개선 근거
+  debtRatioStatus?: SimpleStatus; // 부채비율 상태
+  interestCoverage?: CoverageStatus; // 이자보상배수 상태
+  leaseReady?: YesNoUnknown; // 임대차계약서 보유
+  salesEvidenceReady?: YesNoUnknown; // 매출 증빙 가능
 }
 
 export interface AgencyRecommendation {
@@ -297,6 +305,27 @@ export interface DocumentCheck {
   note?: string;
 }
 
+// ── 11차: 빠른/심층 진단 + 세부 자금 트랙 ──
+export type LikelihoodLevel = "높음" | "보통" | "낮음";
+
+// 내부 점수(0~100) → 화면용 3단계 가능성
+export function likelihoodOf(score: number): LikelihoodLevel {
+  return score >= 70 ? "높음" : score >= 50 ? "보통" : "낮음";
+}
+
+export interface SpecialTrackCandidate {
+  key: string;
+  name: string;
+  level: LikelihoodLevel;
+  reasons: string[];
+  cautions: string[];
+  requiredDocuments: string[];
+  consultingScript: string;
+}
+
+export type SimpleStatus = "양호" | "보통" | "높음" | "미확인";
+export type CoverageStatus = "양호" | "보통" | "낮음" | "미확인";
+
 export interface DiagnosisResult {
   companyName: string;
   overallScore: number;
@@ -327,6 +356,9 @@ export interface DiagnosisResult {
   documentChecks?: DocumentCheck[]; // 자료 확보/부족 체크
   growthKeywords?: string[]; // 업종별 성장 키워드
   coachMessage?: string; // 김팀장 AI 한마디
+  // 11차: 3단계 가능성 + 세부 자금 트랙
+  likelihoodLevel?: LikelihoodLevel;
+  specialTracks?: SpecialTrackCandidate[];
 }
 
 // 고객(CRM) 진행 단계 및 고객 레코드 — Mock 대시보드/상세에서 사용.
@@ -392,6 +424,11 @@ export interface Customer {
   consultationChecklist?: ConsultationChecklist;
   leadReaction?: LeadReaction | null;
   closingScore?: number;
+  // 빠른/심층 진단 이력 (11차 — 옵셔널)
+  quickDiagnosisInput?: DiagnosisInput;
+  deepDiagnosisInput?: DiagnosisInput;
+  likelihoodLevel?: LikelihoodLevel;
+  specialFundingTracks?: SpecialTrackCandidate[];
 }
 
 // 진행단계 드롭다운/필터에 재사용

@@ -74,6 +74,12 @@ function isSecured(hint: string | null, p: Profile): boolean {
       return p.input.bizPlanReadiness === "자료 충분";
     case "taxClear":
       return p.input.taxArrears === "없음" && p.input.insuranceArrears === "없음";
+    case "quoteReady":
+      return p.input.quoteReady === "있음";
+    case "leaseReady":
+      return p.input.leaseReady === "있음";
+    case "salesEvidenceReady":
+      return p.input.salesEvidenceReady === "있음";
     default:
       return false;
   }

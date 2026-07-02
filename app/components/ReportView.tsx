@@ -96,10 +96,18 @@ function ReportDocument({ customer }: { customer: Customer }) {
             </div>
             <div>
               <p className="text-xs font-semibold text-slate-500">가능성</p>
-              <p className="mt-1 text-2xl font-bold text-blue-700">
-                {r.score}
-                <span className="text-sm text-slate-400">점</span>
+              <p
+                className={`mt-1 text-2xl font-bold ${
+                  r.likelihood === "높음"
+                    ? "text-green-600"
+                    : r.likelihood === "보통"
+                      ? "text-amber-600"
+                      : "text-slate-500"
+                }`}
+              >
+                {r.likelihood}
               </p>
+              <p className="text-xs text-slate-400">내부 점수 {r.score}점</p>
             </div>
             <div>
               <p className="text-xs font-semibold text-slate-500">예상 진행기간</p>
@@ -282,6 +290,46 @@ function ReportDocument({ customer }: { customer: Customer }) {
               ))}
             </div>
           </section>
+
+          {/* 섹션 2-1. 세부 자금 트랙 후보 (11차) */}
+          {r.specialTracks.length > 0 && (
+            <section className="report-section">
+              <h2 className="text-lg font-bold text-slate-900">
+                2-1. 세부 자금 트랙 후보
+              </h2>
+              <div className="mt-4 space-y-3">
+                {r.specialTracks.map((t) => (
+                  <div
+                    key={t.key}
+                    className="rounded-2xl border border-slate-100 p-4"
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-bold text-slate-900">{t.name}</span>
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                          t.level === "높음"
+                            ? "bg-green-50 text-green-700"
+                            : "bg-amber-50 text-amber-700"
+                        }`}
+                      >
+                        가능성 {t.level}
+                      </span>
+                    </div>
+                    {t.reasons.length > 0 && (
+                      <p className="mt-2 text-sm text-slate-600">
+                        근거 · {t.reasons.join(" · ")}
+                      </p>
+                    )}
+                    {t.cautions.length > 0 && (
+                      <p className="mt-1 text-xs text-amber-700">
+                        ⚠ {t.cautions.join(" / ")}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* 섹션 3. 준비해야 할 서류 */}
           <section className="report-section">

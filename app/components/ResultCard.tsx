@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { DiagnosisInput, DiagnosisResult } from "@/app/types";
+import { likelihoodOf } from "@/app/types";
 import {
   aiReasoning,
   buildCoachChat,
@@ -10,6 +11,22 @@ import {
   todayTasks,
 } from "@/app/lib/coach";
 import ChatBubble from "./ChatBubble";
+
+// 3단계 가능성 배지 (퍼센트 대신)
+function LikelihoodBadge({ score }: { score: number }) {
+  const level = likelihoodOf(score);
+  const cls =
+    level === "높음"
+      ? "bg-green-50 text-green-700 ring-green-200"
+      : level === "보통"
+        ? "bg-amber-50 text-amber-700 ring-amber-200"
+        : "bg-slate-100 text-slate-500 ring-slate-200";
+  return (
+    <span className={`rounded-full px-3 py-1 text-sm font-bold ring-1 ${cls}`}>
+      가능성 {level}
+    </span>
+  );
+}
 
 function Card({
   title,
@@ -120,7 +137,7 @@ export default function ResultCard({
             <Stars score={result.overallScore} />
           </span>
           <span className="text-lg font-bold">
-            진행 추천도 {result.overallScore}점
+            진행 가능성 {result.likelihoodLevel ?? likelihoodOf(result.overallScore)}
           </span>
           <span className="rounded-full bg-white/15 px-3 py-1 text-sm font-medium">
             1순위 · {result.topAgency}
@@ -155,8 +172,132 @@ export default function ResultCard({
         </div>
       )}
 
-      {/* ── ② 왜 이렇게 판단했는지 ───────────────────────── */}
-      <SectionLabel step="②" title="왜 이렇게 판단했을까요" />
+      {/* ── ② 추천 기관 & 세부 자금 트랙 ───────────────────────── */}
+      <SectionLabel step="②" title="추천 기관 & 세부 자금 트랙" />
+
+      {/* 추천 기관 TOP 3 (GOOD / BAD) */}
+      <Card title="추천 기관 TOP 3" emoji="🏦">
+        <div className="space-y-4">
+          {result.agencies.map((a, idx) => (
+            <div key={a.name} className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold text-white ${
+                      rankBadge[idx] ?? "bg-slate-400"
+                    }`}
+                  >
+                    {a.rank}
+                  </span>
+                  <span className="font-bold">{a.name}</span>
+                  {a.exceptionalReview && (
+                    <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-700">
+                      예외 검토
+                    </span>
+                  )}
+                </div>
+                <LikelihoodBadge score={a.score} />
+              </div>
+              {a.exceptionalReview && a.exceptionalNote && (
+                <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">
+                  {a.exceptionalNote}
+                </p>
+              )}
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-lg border border-green-100 bg-green-50/50 p-3">
+                  <p className="text-xs font-bold text-green-700">👍 좋은 이유</p>
+                  <ul className="mt-1.5 space-y-1 text-sm text-slate-700">
+                    {a.reasons.map((r) => (
+                      <li key={r} className="flex gap-1.5">
+                        <span className="text-green-500">+</span>
+                        {r}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="rounded-lg border border-amber-100 bg-amber-50/50 p-3">
+                  <p className="text-xs font-bold text-amber-700">⚠ 주의</p>
+                  <ul className="mt-1.5 space-y-1 text-sm text-slate-700">
+                    {a.cautions.map((c) => (
+                      <li key={c} className="flex gap-1.5">
+                        <span className="text-amber-500">!</span>
+                        {c}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* 후순위/제외 기관 사유 */}
+        {result.deprioritized && result.deprioritized.length > 0 && (
+          <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <p className="text-xs font-bold text-slate-500">
+              🚫 이번 추천에서 후순위로 밀린 기관과 그 이유
+            </p>
+            <ul className="mt-2 space-y-1.5 text-sm text-slate-600">
+              {result.deprioritized.map((d) => (
+                <li key={d.name} className="flex gap-1.5">
+                  <span className="shrink-0 font-semibold text-slate-500">
+                    {d.name}
+                  </span>
+                  <span className="text-slate-400">—</span>
+                  <span>{d.reason}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </Card>
+
+      {/* 세부 자금 트랙 후보 (11차) */}
+      {result.specialTracks && result.specialTracks.length > 0 && (
+        <Card title="세부 자금 트랙 후보" emoji="🎯">
+          <p className="-mt-2 mb-4 text-sm text-slate-500">
+            일반 자금보다 한도·금리가 유리할 수 있는 우대 트랙이에요.
+          </p>
+          <div className="space-y-3">
+            {result.specialTracks.map((t) => (
+              <div
+                key={t.key}
+                className="rounded-xl border border-slate-100 bg-slate-50 p-4"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-bold text-slate-800">{t.name}</span>
+                  <span
+                    className={`rounded-full px-2.5 py-0.5 text-xs font-bold ring-1 ${
+                      t.level === "높음"
+                        ? "bg-green-50 text-green-700 ring-green-200"
+                        : "bg-amber-50 text-amber-700 ring-amber-200"
+                    }`}
+                  >
+                    가능성 {t.level}
+                  </span>
+                </div>
+                {t.reasons.length > 0 && (
+                  <p className="mt-2 text-sm text-slate-600">
+                    <span className="font-semibold text-slate-500">근거</span> ·{" "}
+                    {t.reasons.join(" · ")}
+                  </p>
+                )}
+                {t.cautions.length > 0 && (
+                  <p className="mt-1 text-xs text-amber-700">
+                    ⚠ {t.cautions.join(" / ")}
+                  </p>
+                )}
+                <p className="mt-2 rounded-lg bg-white px-3 py-2 text-xs leading-5 text-slate-600 ring-1 ring-slate-100">
+                  💬 {t.consultingScript}
+                </p>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* ── ③ 왜 이렇게 판단했는지 ───────────────────────── */}
+      <SectionLabel step="③" title="왜 이렇게 판단했을까요" />
 
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
@@ -245,87 +386,8 @@ export default function ResultCard({
         </div>
       </Card>
 
-      {/* ── ③ 세부 내용 ───────────────────────── */}
-      <SectionLabel step="③" title="세부 내용" />
-
-      {/* 추천 기관 TOP 3 (GOOD / BAD) */}
-      <Card title="추천 기관 TOP 3" emoji="🏦">
-        <div className="space-y-4">
-          {result.agencies.map((a, idx) => (
-            <div key={a.name} className="rounded-xl border border-slate-100 bg-slate-50 p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span
-                    className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold text-white ${
-                      rankBadge[idx] ?? "bg-slate-400"
-                    }`}
-                  >
-                    {a.rank}
-                  </span>
-                  <span className="font-bold">{a.name}</span>
-                  {a.exceptionalReview && (
-                    <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-700">
-                      예외 검토
-                    </span>
-                  )}
-                </div>
-                <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700">
-                  적합도 {a.score}
-                </span>
-              </div>
-              {a.exceptionalReview && a.exceptionalNote && (
-                <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">
-                  {a.exceptionalNote}
-                </p>
-              )}
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-lg border border-green-100 bg-green-50/50 p-3">
-                  <p className="text-xs font-bold text-green-700">👍 좋은 이유</p>
-                  <ul className="mt-1.5 space-y-1 text-sm text-slate-700">
-                    {a.reasons.map((r) => (
-                      <li key={r} className="flex gap-1.5">
-                        <span className="text-green-500">+</span>
-                        {r}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="rounded-lg border border-amber-100 bg-amber-50/50 p-3">
-                  <p className="text-xs font-bold text-amber-700">⚠ 주의</p>
-                  <ul className="mt-1.5 space-y-1 text-sm text-slate-700">
-                    {a.cautions.map((c) => (
-                      <li key={c} className="flex gap-1.5">
-                        <span className="text-amber-500">!</span>
-                        {c}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* 후순위/제외 기관 사유 */}
-        {result.deprioritized && result.deprioritized.length > 0 && (
-          <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <p className="text-xs font-bold text-slate-500">
-              🚫 이번 추천에서 후순위로 밀린 기관과 그 이유
-            </p>
-            <ul className="mt-2 space-y-1.5 text-sm text-slate-600">
-              {result.deprioritized.map((d) => (
-                <li key={d.name} className="flex gap-1.5">
-                  <span className="shrink-0 font-semibold text-slate-500">
-                    {d.name}
-                  </span>
-                  <span className="text-slate-400">—</span>
-                  <span>{d.reason}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </Card>
+      {/* ── ④ 세부 내용 ───────────────────────── */}
+      <SectionLabel step="④" title="세부 내용" />
 
       {/* AI 상담 코치 (채팅형) */}
       <Card title="AI 상담 코치" emoji="🎯">
@@ -414,7 +476,7 @@ export default function ResultCard({
 
       {/* ── ④ 사업계획 & 심사 대비 (10차) ───────────────────────── */}
       {(result.planScore || result.reviewSim) && (
-        <SectionLabel step="④" title="사업계획 & 심사 대비" />
+        <SectionLabel step="⑤" title="사업계획 & 심사 대비" />
       )}
 
       {/* 사업계획 완성도 */}

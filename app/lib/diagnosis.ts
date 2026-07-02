@@ -64,6 +64,14 @@ export const DEFAULT_INPUT: DiagnosisInput = {
   majorClients: "미확인",
   assetEvidence: "미확인",
   bizPlanReadiness: "미확인",
+  // 심층 진단 전용 (11차)
+  techClarity: "미확인",
+  quoteReady: "미확인",
+  productivityEvidence: "미확인",
+  debtRatioStatus: "미확인",
+  interestCoverage: "미확인",
+  leaseReady: "미확인",
+  salesEvidenceReady: "미확인",
 };
 
 export const SAMPLE_INPUT: DiagnosisInput = {

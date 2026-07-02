@@ -106,6 +106,7 @@ function newCustomerId(): string {
 export function buildCustomerFromDiagnosis(
   input: DiagnosisInput,
   result: DiagnosisResult,
+  opts?: { quickInput?: DiagnosisInput; deepInput?: DiagnosisInput },
 ): Customer {
   const today = todayStr();
   return {
@@ -123,5 +124,10 @@ export function buildCustomerFromDiagnosis(
     memo: input.memo,
     diagnosisInput: input,
     diagnosisResult: result,
+    // 빠른/심층 진단 이력 (11차)
+    quickDiagnosisInput: opts?.quickInput,
+    deepDiagnosisInput: opts?.deepInput,
+    likelihoodLevel: result.likelihoodLevel,
+    specialFundingTracks: result.specialTracks,
   };
 }
