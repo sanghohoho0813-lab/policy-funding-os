@@ -451,6 +451,146 @@ function ReportDocument({ customer }: { customer: Customer }) {
             </section>
           )}
 
+          {/* 섹션 6-1. AI 사업계획 전략 (12차 — 진단 고객만) */}
+          {r.planStrategy && (
+            <section className="report-section">
+              <h2 className="text-lg font-bold text-slate-900">
+                6-1. AI 사업계획 전략{" "}
+                <span className="text-sm font-medium text-slate-400">
+                  ({r.planStrategy.agency} 기준)
+                </span>
+              </h2>
+
+              {/* 6-1-1. 핵심 전략 */}
+              <div className="mt-4">
+                <p className="text-sm font-bold text-slate-800">핵심 전략</p>
+                <p className="mt-1 text-sm text-slate-600">
+                  {r.planStrategy.flow.join(" → ")}
+                </p>
+                <p className="mt-1.5 text-sm leading-6 text-slate-600">
+                  {r.planStrategy.summary}
+                </p>
+                <p className="mt-2 rounded-lg bg-green-50 px-3 py-2 text-sm leading-6 text-green-900">
+                  왜 승인될 것 같은가 · {r.planStrategy.winReason}
+                </p>
+              </div>
+
+              {/* 6-1-2. 심사관이 좋아할 포인트 */}
+              {r.reviewFocus && (
+                <div className="mt-5">
+                  <p className="text-sm font-bold text-slate-800">
+                    심사관이 좋아할 포인트
+                  </p>
+                  <ul className="mt-2 space-y-1.5">
+                    {r.reviewFocus.focus.map((f) => (
+                      <li
+                        key={f.label}
+                        className="flex items-center justify-between gap-2 text-sm text-slate-700"
+                      >
+                        <span>{f.label}</span>
+                        <span className="text-amber-500">
+                          {"★".repeat(f.stars)}
+                          <span className="text-slate-300">
+                            {"★".repeat(5 - f.stars)}
+                          </span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* 6-1-3. 반드시 강조할 내용 (논리 흐름) */}
+              {r.planLogic.length > 0 && (
+                <div className="mt-5">
+                  <p className="text-sm font-bold text-slate-800">
+                    반드시 강조할 내용 (논리 흐름)
+                  </p>
+                  <ol className="mt-2 space-y-1 text-sm text-slate-700">
+                    {r.planLogic.map((s) => (
+                      <li key={s.key}>
+                        {s.no}. {s.title}
+                        {s.emphasized && (
+                          <span className="ml-1 text-amber-500">★</span>
+                        )}{" "}
+                        — {s.question}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+
+              {/* 6-1-4. 반드시 준비할 자료 */}
+              {r.documentPriority.length > 0 && (
+                <div className="mt-5">
+                  <p className="text-sm font-bold text-slate-800">
+                    반드시 준비할 자료
+                  </p>
+                  <ul className="mt-2 space-y-1 text-sm text-slate-700">
+                    {r.documentPriority.map((d) => (
+                      <li key={d.label}>
+                        <span className="text-amber-500">
+                          {"★".repeat(d.tier)}
+                        </span>{" "}
+                        {d.label} — {d.why}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* 6-1-5. 성장 논리 */}
+              {r.growthLogic && (
+                <div className="mt-5">
+                  <p className="text-sm font-bold text-slate-800">성장 논리</p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    {r.growthLogic.chain.join(" → ")}
+                  </p>
+                  <p className="mt-1.5 text-sm leading-6 text-slate-600">
+                    {r.growthLogic.logic}
+                  </p>
+                </div>
+              )}
+
+              {/* 6-1-6. 추천 스토리 */}
+              {r.storyPack && (
+                <div className="mt-5">
+                  <p className="text-sm font-bold text-slate-800">추천 스토리</p>
+                  <div className="mt-2 space-y-3">
+                    {r.storyPack.versions.map((v) => (
+                      <div key={v.key}>
+                        <p className="text-sm font-semibold text-slate-700">
+                          [{v.label}] {v.tone}
+                        </p>
+                        <p className="mt-0.5 text-sm leading-7 text-slate-600">
+                          {v.story}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 6-1-7. 왜 이 기관인가 */}
+              {r.agencyComparison.length > 0 && (
+                <div className="mt-5">
+                  <p className="text-sm font-bold text-slate-800">
+                    왜 다른 기관이 아니라 이 기관인가
+                  </p>
+                  <ul className="mt-2 space-y-1 text-sm leading-6 text-slate-600">
+                    {r.agencyComparison.map((c, i) => (
+                      <li key={i}>• {c}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <p className="mt-4 text-xs text-slate-400">
+                ※ XX 표시는 대표님과 함께 채울 숫자입니다.
+              </p>
+            </section>
+          )}
+
           {/* 섹션 7. 안내 문구 */}
           <section className="report-section border-t border-slate-100 pt-6">
             <p className="text-xs leading-6 text-slate-500">

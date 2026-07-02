@@ -11,6 +11,36 @@ import {
   todayTasks,
 } from "@/app/lib/coach";
 import ChatBubble from "./ChatBubble";
+import PlanChecklistCard from "./PlanChecklistCard";
+
+// 심사 포인트 별점 (1~5)
+function FocusStars({ n }: { n: number }) {
+  return (
+    <span className="shrink-0 text-sm tracking-tight" aria-label={`${n}점`}>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <span key={i} className={i < n ? "text-amber-400" : "text-slate-200"}>
+          ★
+        </span>
+      ))}
+    </span>
+  );
+}
+
+// 전략/논리 흐름을 화살표 사슬로 표시
+function FlowChain({ steps }: { steps: string[] }) {
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {steps.map((s, i) => (
+        <span key={`${s}-${i}`} className="flex items-center gap-1.5">
+          <span className="rounded-lg bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-800">
+            {s}
+          </span>
+          {i < steps.length - 1 && <span className="text-slate-300">→</span>}
+        </span>
+      ))}
+    </div>
+  );
+}
 
 // 3단계 가능성 배지 (퍼센트 대신)
 function LikelihoodBadge({ score }: { score: number }) {
@@ -639,6 +669,222 @@ export default function ResultCard({
           </ol>
         </Card>
       )}
+
+      {/* ── ⑥ AI 사업계획 전략 (12차) ───────────────────────── */}
+      {result.planStrategy && (
+        <SectionLabel step="⑥" title="AI 사업계획 전략" />
+      )}
+
+      {/* 1. 핵심 전략 (작업1) */}
+      {result.planStrategy && (
+        <Card
+          title={`핵심 전략 · ${result.planStrategy.agency}`}
+          emoji="♟️"
+        >
+          <FlowChain steps={result.planStrategy.flow} />
+          <p className="mt-4 text-sm leading-7 text-slate-700">
+            {result.planStrategy.summary}
+          </p>
+          <p className="mt-3 rounded-xl bg-green-50/70 px-4 py-3 text-sm leading-6 text-green-900">
+            <span className="font-bold">왜 승인될 것 같은가 · </span>
+            {result.planStrategy.winReason}
+          </p>
+        </Card>
+      )}
+
+      {/* 2. 심사관이 좋아할 포인트 (작업5) */}
+      {result.reviewFocus && (
+        <Card
+          title={`심사관이 좋아할 포인트 · ${result.reviewFocus.agency}`}
+          emoji="🧑‍⚖️"
+        >
+          <p className="-mt-2 mb-4 rounded-lg bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-500">
+            심사관의 관점: {result.reviewFocus.mindset}
+          </p>
+          <ul className="space-y-2.5">
+            {result.reviewFocus.focus.map((f) => (
+              <li
+                key={f.label}
+                className="rounded-xl border border-slate-100 bg-slate-50 p-3"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-bold text-slate-800">
+                    {f.label}
+                  </span>
+                  <FocusStars n={f.stars} />
+                </div>
+                <p className="mt-1 text-xs leading-5 text-slate-600">{f.note}</p>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
+      {/* 3. 반드시 강조할 논리 흐름 (작업2) */}
+      {result.planLogic && result.planLogic.length > 0 && (
+        <Card title="반드시 강조할 논리 흐름 (7단계)" emoji="🧩">
+          <p className="-mt-2 mb-4 text-sm text-slate-500">
+            문장보다 순서입니다. 이 사슬이 끊기지 않게 써야 승인돼요.
+            <span className="ml-1 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-700">
+              ★ = 이 기관이 특히 보는 단계
+            </span>
+          </p>
+          <ol className="space-y-3">
+            {result.planLogic.map((step) => (
+              <li
+                key={step.key}
+                className={`rounded-xl border p-4 ${
+                  step.emphasized
+                    ? "border-amber-200 bg-amber-50/60"
+                    : "border-slate-100 bg-slate-50"
+                }`}
+              >
+                <p className="flex items-center gap-2 text-sm font-bold text-slate-800">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-xs text-white">
+                    {step.no}
+                  </span>
+                  {step.title}
+                  {step.emphasized && <span className="text-amber-500">★</span>}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-700">
+                  <span className="font-semibold text-blue-600">묻기 · </span>
+                  {step.question}
+                </p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  {step.guide}
+                </p>
+              </li>
+            ))}
+          </ol>
+        </Card>
+      )}
+
+      {/* 4. 성장 논리 (작업4) */}
+      {result.growthLogic && (
+        <Card
+          title={`성장 논리 · ${result.growthLogic.category}`}
+          emoji="📈"
+        >
+          <FlowChain steps={result.growthLogic.chain} />
+          <p className="mt-4 text-sm leading-7 text-slate-700">
+            {result.growthLogic.logic}
+          </p>
+          <p className="mt-3 rounded-xl bg-blue-50/60 px-4 py-3 text-xs leading-6 text-blue-900">
+            💡 {result.growthLogic.reviewerNote}
+          </p>
+          {result.growthLogic.keywords.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {result.growthLogic.keywords.map((k) => (
+                <span
+                  key={k}
+                  className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600"
+                >
+                  #{k}
+                </span>
+              ))}
+            </div>
+          )}
+        </Card>
+      )}
+
+      {/* 5. 추천 스토리 3버전 (작업3) */}
+      {result.storyPack && (
+        <Card
+          title={`추천 스토리 3버전 · ${result.storyPack.category}`}
+          emoji="📖"
+        >
+          <div className="mb-4">
+            <FlowChain steps={result.storyPack.chain} />
+          </div>
+          <div className="space-y-3">
+            {result.storyPack.versions.map((v) => (
+              <div
+                key={v.key}
+                className="rounded-xl border border-slate-100 bg-slate-50 p-4"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-slate-900 px-2.5 py-0.5 text-xs font-bold text-white">
+                    {v.label}
+                  </span>
+                  <span className="text-xs text-slate-400">{v.tone}</span>
+                </div>
+                <p className="mt-2 text-sm leading-7 text-slate-700">
+                  {v.story}
+                </p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-xs text-slate-400">
+            ※ XX는 대표와 함께 채울 숫자입니다. 대표 성향에 맞는 버전을 골라 쓰세요.
+          </p>
+        </Card>
+      )}
+
+      {/* 6. 반드시 준비할 자료 (작업6) */}
+      {result.documentPriority && result.documentPriority.length > 0 && (
+        <Card title="반드시 준비할 자료 (중요도순)" emoji="🗂️">
+          <div className="space-y-4">
+            {[
+              { tier: 5, label: "반드시 필요", cls: "text-red-600" },
+              { tier: 4, label: "있으면 매우 좋음", cls: "text-amber-600" },
+              { tier: 3, label: "보완 자료", cls: "text-slate-500" },
+            ].map((group) => {
+              const items = result.documentPriority!.filter(
+                (d) => d.tier === group.tier,
+              );
+              if (items.length === 0) return null;
+              return (
+                <div key={group.tier}>
+                  <p className={`text-xs font-bold ${group.cls}`}>
+                    {"★".repeat(group.tier)}
+                    <span className="text-slate-200">
+                      {"★".repeat(5 - group.tier)}
+                    </span>{" "}
+                    {group.label}
+                  </p>
+                  <ul className="mt-2 space-y-1.5">
+                    {items.map((d) => (
+                      <li
+                        key={d.label}
+                        className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2"
+                      >
+                        <p className="text-sm font-semibold text-slate-800">
+                          {d.label}
+                        </p>
+                        <p className="text-xs leading-5 text-slate-500">
+                          {d.why}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
+
+      {/* 7. 왜 이 기관인가 — 기관 비교 근거 (작업10) */}
+      {result.agencyComparison && result.agencyComparison.length > 0 && (
+        <Card title="왜 다른 기관이 아니라 이 기관인가" emoji="⚖️">
+          <ul className="space-y-2.5">
+            {result.agencyComparison.map((c, i) => (
+              <li
+                key={i}
+                className="flex gap-2 rounded-xl border border-slate-100 bg-slate-50 p-3 text-sm leading-6 text-slate-700"
+              >
+                <span className="text-blue-500">•</span>
+                {c}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
+      {/* 8. 사업계획 체크리스트 (작업9 — 체크 시 저장) */}
+      <PlanChecklistCard
+        storageKey={`${result.companyName}-${result.topAgency}`}
+      />
 
       {/* 다음 연락 메시지 */}
       <Card title="다음 연락 메시지" emoji="💬">

@@ -326,6 +326,96 @@ export interface SpecialTrackCandidate {
 export type SimpleStatus = "양호" | "보통" | "높음" | "미확인";
 export type CoverageStatus = "양호" | "보통" | "낮음" | "미확인";
 
+// ── 12차: 사업계획 전략 AI 산출물 (전부 옵셔널 — 기존 UI 무시하므로 안전) ──
+// 작업1: 기관별 사업계획 전략 흐름
+export interface PlanStrategy {
+  agency: string;
+  flow: string[]; // 전략 사슬 단계
+  summary: string; // 핵심 한 줄
+  winReason: string; // 왜 승인될 것 같은가
+}
+
+// 작업2: 사업계획 논리 흐름 (문장이 아니라 논리 설계)
+export interface PlanLogicStep {
+  no: number;
+  key: string;
+  title: string;
+  question: string; // 대표에게 물어볼 것
+  guide: string; // 심사관 관점 작성 방향
+  emphasized?: boolean; // 1순위 기관이 특히 강조할 단계
+}
+
+// 작업3: 업종별 스토리 3버전
+export interface StoryVersion {
+  key: string; // conservative | balanced | growth
+  label: string; // 보수형 | 일반형 | 성장형
+  tone: string;
+  story: string;
+}
+export interface StoryPack {
+  category: string;
+  chain: string[]; // 매출로 이어지는 논리 고리
+  versions: StoryVersion[];
+}
+
+// 작업4: 업종별 성장 논리 사슬
+export interface GrowthLogic {
+  category: string;
+  chain: string[];
+  logic: string;
+  reviewerNote: string;
+  keywords: string[];
+}
+
+// 작업5: 기관별 심사 포인트 (별점)
+export interface ReviewFocusItem {
+  label: string;
+  stars: number; // 1~5
+  note: string;
+}
+export interface ReviewFocus {
+  agency: string;
+  mindset: string;
+  focus: ReviewFocusItem[];
+}
+
+// 작업6: 자료 우선순위 (중요도 등급)
+export interface DocPriorityItem {
+  label: string;
+  tier: number; // 5=반드시 / 4=매우 좋음 / 3=보완
+  why: string;
+}
+
+// 작업9: 사업계획 체크리스트 (체크 시 저장)
+export type PlanChecklistKey =
+  | "problemDefined"
+  | "investmentNeed"
+  | "usePlan"
+  | "growthLogic"
+  | "revenueLogic"
+  | "employmentEffect"
+  | "clientEvidence"
+  | "techEvidence"
+  | "facilityEvidence"
+  | "repaymentLogic";
+export type PlanChecklist = Record<PlanChecklistKey, boolean>;
+export interface PlanChecklistDef {
+  key: PlanChecklistKey;
+  label: string;
+}
+export const PLAN_CHECKLIST_ITEMS: PlanChecklistDef[] = [
+  { key: "problemDefined", label: "현재 문제 정의" },
+  { key: "investmentNeed", label: "투자 필요성" },
+  { key: "usePlan", label: "자금 사용 계획" },
+  { key: "growthLogic", label: "성장 논리" },
+  { key: "revenueLogic", label: "매출 증가 논리" },
+  { key: "employmentEffect", label: "고용 효과" },
+  { key: "clientEvidence", label: "거래처 근거" },
+  { key: "techEvidence", label: "기술 근거" },
+  { key: "facilityEvidence", label: "시설 근거" },
+  { key: "repaymentLogic", label: "상환 논리" },
+];
+
 export interface DiagnosisResult {
   companyName: string;
   overallScore: number;
@@ -359,6 +449,14 @@ export interface DiagnosisResult {
   // 11차: 3단계 가능성 + 세부 자금 트랙
   likelihoodLevel?: LikelihoodLevel;
   specialTracks?: SpecialTrackCandidate[];
+  // 12차: 사업계획 전략 AI (전부 옵셔널)
+  planStrategy?: PlanStrategy; // 작업1: 기관별 전략 흐름
+  planLogic?: PlanLogicStep[]; // 작업2: 논리 흐름 7단계
+  storyPack?: StoryPack; // 작업3: 업종별 스토리 3버전
+  growthLogic?: GrowthLogic; // 작업4: 성장 논리 사슬
+  reviewFocus?: ReviewFocus; // 작업5: 심사 포인트(별점)
+  documentPriority?: DocPriorityItem[]; // 작업6: 자료 우선순위
+  agencyComparison?: string[]; // 작업10: 왜 이 기관인가 비교 근거
 }
 
 // 고객(CRM) 진행 단계 및 고객 레코드 — Mock 대시보드/상세에서 사용.

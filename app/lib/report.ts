@@ -3,6 +3,12 @@ import type {
   LikelihoodLevel,
   PlanDraft,
   SpecialTrackCandidate,
+  PlanStrategy,
+  PlanLogicStep,
+  StoryPack,
+  GrowthLogic,
+  ReviewFocus,
+  DocPriorityItem,
 } from "@/app/types";
 import { likelihoodOf } from "@/app/types";
 import { progressStars } from "@/app/lib/coach";
@@ -59,6 +65,14 @@ export interface ReportModel {
   // 11차: 3단계 가능성 + 세부 자금 트랙
   likelihood: LikelihoodLevel;
   specialTracks: SpecialTrackCandidate[];
+  // 12차: 사업계획 전략 AI (진단 고객만 — 없으면 null)
+  planStrategy: PlanStrategy | null;
+  planLogic: PlanLogicStep[];
+  storyPack: StoryPack | null;
+  growthLogic: GrowthLogic | null;
+  reviewFocus: ReviewFocus | null;
+  documentPriority: DocPriorityItem[];
+  agencyComparison: string[];
 }
 
 // 진단 입력(인콜 필드)에서 리포트용 요약 블록 생성
@@ -238,5 +252,13 @@ export function buildReportModel(customer: Customer): ReportModel {
       customer.specialFundingTracks ??
       customer.diagnosisResult?.specialTracks ??
       [],
+    // 12차: 사업계획 전략 AI
+    planStrategy: result?.planStrategy ?? null,
+    planLogic: result?.planLogic ?? [],
+    storyPack: result?.storyPack ?? null,
+    growthLogic: result?.growthLogic ?? null,
+    reviewFocus: result?.reviewFocus ?? null,
+    documentPriority: result?.documentPriority ?? [],
+    agencyComparison: result?.agencyComparison ?? [],
   };
 }

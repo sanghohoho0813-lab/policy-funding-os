@@ -52,6 +52,16 @@ import { buildReviewSimulation } from "./reviewEngine";
 import { checkDocuments } from "./documentEngine";
 import { getGrowthPoints } from "./growthEngine";
 import { detectSpecialTracks } from "./trackEngine";
+// ── 사업계획 전략 AI (12차) ──
+import {
+  getPlanStrategy,
+  getPlanLogic,
+  buildAgencyComparison,
+} from "./strategyEngine";
+import { buildStoryVersions } from "./storyEngine";
+import { getGrowthLogic } from "./growthLogicEngine";
+import { getReviewFocus } from "./reviewFocusEngine";
+import { getDocumentPriority } from "./documentPriorityEngine";
 import { likelihoodOf } from "@/app/types";
 
 // ── knowledge 스키마 타입 ──
@@ -493,9 +503,16 @@ export function runKnowledgeDiagnosis(input: DiagnosisInput): DiagnosisResult {
   const framework = getFramework(topAgency);
   const growth = getGrowthPoints(profile.industryCategory);
 
-  // 5) reasoning (사람처럼 설명) — 기관 추천 + 사업계획 강조점까지 (작업 11)
+  // 5) reasoning (사람처럼 설명) — 기관 추천 + 기관 비교 + 사업계획 강조점까지 (작업10·11)
+  const comparisonForReasoning = buildAgencyComparison(
+    profile,
+    agencies.map((a) => a.name),
+  );
   const reasoning =
     generateReasoning(profile, agencies, cases, risk, KB) +
+    (comparisonForReasoning.length > 0
+      ? ` ${comparisonForReasoning[0]}`
+      : "") +
     ` 사업계획서에서는 ${framework.emphasis}`;
 
   // 6) scripts + coachInsight (funding-scripts / contract-notices / 인콜 조건부 질문)
@@ -525,16 +542,40 @@ export function runKnowledgeDiagnosis(input: DiagnosisInput): DiagnosisResult {
   // 8-2.5) 세부 자금 트랙 후보 (11차 — special-funding-tracks.json)
   const specialTracks = detectSpecialTracks(profile);
 
-  // 8-3) 김팀장 AI 한마디 (작업 12) — 사업계획 완성도 기반
+  // 8-2.6) 사업계획 전략 AI (12차)
+  const planStrategy = getPlanStrategy(topAgency); // 작업1
+  const planLogic = getPlanLogic(topAgency); // 작업2
+  const storyPack = buildStoryVersions(profile.industryCategory); // 작업3
+  const growthLogic = getGrowthLogic(profile.industryCategory); // 작업4
+  const reviewFocus = getReviewFocus(topAgency); // 작업5
+  const documentPriority = getDocumentPriority(profile); // 작업6
+  const agencyComparison = buildAgencyComparison(
+    profile,
+    agencies.map((a) => a.name),
+  ); // 작업10
+
+  // 8-3) 김팀장 AI 한마디 (작업8) — 사업계획 완성도 + 우선 준비 자료 기반
   const weak2 = planScore.weakPoints
     .slice(0, 2)
     .map((w) => w.split(":")[0]);
+  // 지금 당장 가장 중요한 자료 2개 (요청 필요 항목을 중요도 순으로)
+  const missingDocs = documentPriority
+    .filter((d) => documentChecks.some((c) => c.label === d.label && c.status === "요청 필요"))
+    .slice(0, 2)
+    .map((d) => d.label);
+  const docLine =
+    missingDocs.length > 0
+      ? ` 현재 자료 기준으로는 ${missingDocs.join("과 ")}이(가) 가장 중요합니다.`
+      : "";
   const coachMessage =
     planScore.total < 70
-      ? `이 업체는 사업계획서가 승인 여부를 결정할 가능성이 높습니다. 특히 ${
+      ? `이 업체는 사업계획서의 완성도가 승인 여부를 크게 좌우할 가능성이 있습니다. 특히 ${
           weak2.length > 0 ? weak2.join("·") : "매출 증가 논리"
-        } 부분을 강하게 보완하면 승인 가능성이 눈에 띄게 올라갑니다. ${framework.emphasis}`
-      : `사업계획 기본기는 갖춰져 있습니다(완성도 ${planScore.total}점). 이제 ${framework.focus.slice(0, 3).join("·")} 중심으로 숫자를 다듬고, 증빙을 눈으로 보여줄 준비를 하면 됩니다.`;
+        } 부분을 강하게 보완하면 승인 가능성이 눈에 띄게 올라갑니다.${docLine} ${framework.emphasis}`
+      : `사업계획 기본기는 갖춰져 있습니다(완성도 ${planScore.total}점). 이제 ${reviewFocus.focus
+          .slice(0, 2)
+          .map((f) => f.label.split(" ")[0])
+          .join("·")} 중심으로 숫자를 다듬고, 증빙을 눈으로 보여줄 준비를 하면 됩니다.${docLine}`;
 
   // 9) 진행 추천도 (기관 점수 집계)
   const avg =
@@ -592,6 +633,14 @@ export function runKnowledgeDiagnosis(input: DiagnosisInput): DiagnosisResult {
     coachMessage,
     likelihoodLevel: likelihoodOf(overallScore),
     specialTracks,
+    // 사업계획 전략 AI (12차)
+    planStrategy,
+    planLogic,
+    storyPack,
+    growthLogic,
+    reviewFocus,
+    documentPriority,
+    agencyComparison,
   };
 }
 

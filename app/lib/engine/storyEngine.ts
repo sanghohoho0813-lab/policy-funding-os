@@ -4,9 +4,49 @@
 // XX 는 대표와 함께 채울 숫자 자리.
 
 import type { Profile } from "./knowledgeEngine";
-import type { PlanDraft, PlanDraftSection } from "@/app/types";
+import type {
+  PlanDraft,
+  PlanDraftSection,
+  StoryPack,
+  StoryVersion,
+  IndustryCategory,
+} from "@/app/types";
 import type { AgencyFramework } from "./planEngine";
 import type { GrowthPoints } from "./growthEngine";
+import storyFrameworksJson from "@/knowledge/story-frameworks.json";
+
+interface StoryVersionDef {
+  key: string;
+  label: string;
+  tone: string;
+  story: string;
+}
+interface StoryIndustryDef {
+  category: string;
+  chain: string[];
+  versions: StoryVersionDef[];
+}
+const STORY_INDUSTRIES = (
+  storyFrameworksJson as unknown as { industries: StoryIndustryDef[] }
+).industries;
+
+// 작업3: 업종별 스토리 3버전(보수형·일반형·성장형)을 생성한다.
+export function buildStoryVersions(category: IndustryCategory): StoryPack {
+  const pack =
+    STORY_INDUSTRIES.find((s) => s.category === category) ??
+    STORY_INDUSTRIES.find((s) => s.category === "건설/기타")!;
+  const versions: StoryVersion[] = pack.versions.map((v) => ({
+    key: v.key,
+    label: v.label,
+    tone: v.tone,
+    story: v.story,
+  }));
+  return { category: pack.category, chain: pack.chain, versions };
+}
+
+export function storyTemplateCount(): number {
+  return STORY_INDUSTRIES.reduce((sum, s) => sum + s.versions.length, 0);
+}
 
 function purposeNoun(profile: Profile): string {
   const i = profile.input;
