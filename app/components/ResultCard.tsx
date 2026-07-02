@@ -140,6 +140,21 @@ export default function ResultCard({
         </div>
       </div>
 
+      {/* 김팀장 AI 한마디 (10차) */}
+      {result.coachMessage && (
+        <div className="flex items-start gap-3 rounded-2xl border border-blue-100 bg-blue-50/60 p-5">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-lg">
+            🤖
+          </span>
+          <div>
+            <p className="text-xs font-bold text-blue-700">김팀장 AI</p>
+            <p className="mt-1 text-sm leading-6 text-slate-800">
+              {result.coachMessage}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ── ② 왜 이렇게 판단했는지 ───────────────────────── */}
       <SectionLabel step="②" title="왜 이렇게 판단했을까요" />
 
@@ -396,6 +411,172 @@ export default function ResultCard({
           ))}
         </div>
       </Card>
+
+      {/* ── ④ 사업계획 & 심사 대비 (10차) ───────────────────────── */}
+      {(result.planScore || result.reviewSim) && (
+        <SectionLabel step="④" title="사업계획 & 심사 대비" />
+      )}
+
+      {/* 사업계획 완성도 */}
+      {result.planScore && (
+        <Card title="사업계획 완성도" emoji="📝">
+          <div className="flex items-end gap-3">
+            <span
+              className={`text-4xl font-bold ${
+                result.planScore.total >= 70
+                  ? "text-green-600"
+                  : result.planScore.total >= 50
+                    ? "text-amber-600"
+                    : "text-red-500"
+              }`}
+            >
+              {result.planScore.total}
+            </span>
+            <span className="pb-1 text-sm text-slate-400">/ 100</span>
+          </div>
+          <div className="mt-4 grid gap-2 sm:grid-cols-3">
+            {result.planScore.dimensions.map((d) => (
+              <div key={d.key} className="rounded-lg bg-slate-50 px-3 py-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-medium text-slate-600">{d.label}</span>
+                  <span
+                    className={`font-bold ${
+                      d.score >= d.max * 0.5 ? "text-slate-700" : "text-red-500"
+                    }`}
+                  >
+                    {d.score}/{d.max}
+                  </span>
+                </div>
+                <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
+                  <div
+                    className={`h-full rounded-full ${
+                      d.score >= d.max * 0.5 ? "bg-blue-500" : "bg-red-400"
+                    }`}
+                    style={{ width: `${(d.score / d.max) * 100}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+          {result.planScore.weakPoints.length > 0 && (
+            <div className="mt-4 rounded-xl border border-red-100 bg-red-50/50 p-4">
+              <p className="text-xs font-bold text-red-700">
+                ⚠ 보완이 필요한 부분
+              </p>
+              <ul className="mt-2 space-y-1 text-sm text-slate-700">
+                {result.planScore.weakPoints.map((w) => (
+                  <li key={w} className="flex gap-1.5">
+                    <span className="text-red-400">•</span>
+                    {w}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </Card>
+      )}
+
+      {/* 사업계획서 작성 질문 */}
+      {result.planQuestions && result.planQuestions.length > 0 && (
+        <Card title="사업계획서를 쓰기 위해 대표에게 물어볼 것" emoji="❓">
+          <ol className="space-y-1.5 text-sm text-slate-700">
+            {result.planQuestions.map((q, i) => (
+              <li key={q} className="flex gap-2">
+                <span className="font-semibold text-blue-600">{i + 1}.</span>
+                {q}
+              </li>
+            ))}
+          </ol>
+        </Card>
+      )}
+
+      {/* 심사관 시뮬레이터 */}
+      {result.reviewSim && (
+        <Card title={`심사관 시뮬레이터 · ${result.reviewSim.agency}`} emoji="🧑‍⚖️">
+          <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-500">
+            심사관의 관점: {result.reviewSim.mindset}
+          </p>
+          <div className="mt-4 space-y-3">
+            {result.reviewSim.items.map((qa) => (
+              <div
+                key={qa.question}
+                className="rounded-xl border border-slate-100 bg-slate-50 p-4"
+              >
+                <p className="text-sm font-bold text-slate-800">
+                  Q. {qa.question}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  <span className="font-semibold text-blue-600">A.</span>{" "}
+                  {qa.answer}
+                </p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-xs text-slate-400">
+            ※ XX는 대표와 함께 채울 숫자입니다. 답은 인정→근거→숫자→계획 순서로.
+          </p>
+        </Card>
+      )}
+
+      {/* 자료 체크 */}
+      {result.documentChecks && result.documentChecks.length > 0 && (
+        <Card title="자료 체크 (부족 자료 자동 탐지)" emoji="🗂️">
+          <ul className="grid gap-2 sm:grid-cols-2">
+            {result.documentChecks.map((d) => (
+              <li
+                key={d.label}
+                className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
+                  d.status === "확보"
+                    ? "border-green-100 bg-green-50/50 text-slate-500"
+                    : "border-amber-100 bg-amber-50/50 text-slate-700"
+                }`}
+              >
+                <span
+                  className={`flex h-4 w-4 items-center justify-center rounded border text-[10px] font-bold ${
+                    d.status === "확보"
+                      ? "border-green-400 bg-green-500 text-white"
+                      : "border-amber-400 text-amber-500"
+                  }`}
+                >
+                  {d.status === "확보" ? "✓" : "!"}
+                </span>
+                {d.label}
+                <span
+                  className={`ml-auto text-xs font-semibold ${
+                    d.status === "확보" ? "text-green-600" : "text-amber-600"
+                  }`}
+                >
+                  {d.status}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
+      {/* 기관별 진행 로드맵 */}
+      {result.roadmap && (
+        <Card
+          title={`진행 로드맵${result.roadmap.agency ? ` · ${result.roadmap.agency}` : ""}`}
+          emoji="🗓️"
+        >
+          <ol className="space-y-0">
+            {result.roadmap.steps.map((s, idx) => (
+              <li key={`${s.offsetDays}-${s.task}`} className="flex gap-3">
+                <div className="flex flex-col items-center">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-50 text-xs font-bold text-blue-700">
+                    {s.offsetLabel}
+                  </span>
+                  {idx < result.roadmap!.steps.length - 1 && (
+                    <span className="my-0.5 w-px flex-1 bg-blue-100" />
+                  )}
+                </div>
+                <p className="pt-2 pb-4 text-sm text-slate-700">{s.task}</p>
+              </li>
+            ))}
+          </ol>
+        </Card>
+      )}
 
       {/* 다음 연락 메시지 */}
       <Card title="다음 연락 메시지" emoji="💬">

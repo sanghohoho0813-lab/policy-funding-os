@@ -249,6 +249,52 @@ export interface RoadmapStep {
 export interface Roadmap {
   steps: RoadmapStep[];
   phases: { d30: string[]; d60: string[]; d90: string[] };
+  // 기관별 로드맵일 때 기관명 (10차)
+  agency?: string;
+}
+
+// ── 사업계획 AI / 심사 AI 산출물 (10차 — 전부 옵셔널) ──
+export interface PlanScoreDimension {
+  key: string;
+  label: string;
+  score: number;
+  max: number;
+  note?: string; // 부족할 때 보완 코멘트
+}
+
+export interface PlanScore {
+  total: number; // 0~100
+  dimensions: PlanScoreDimension[];
+  weakPoints: string[]; // 부족한 부분 자동 표시
+}
+
+export interface PlanDraftSection {
+  no: number;
+  title: string;
+  text: string;
+}
+
+export interface PlanDraft {
+  agency: string; // 어떤 기관 프레임에 맞춘 초안인지
+  emphasis: string; // 이 기관에서 강조할 포인트
+  sections: PlanDraftSection[];
+}
+
+export interface ReviewQA {
+  question: string;
+  answer: string;
+}
+
+export interface ReviewSimulation {
+  agency: string;
+  mindset: string; // 심사관이 보는 관점
+  items: ReviewQA[];
+}
+
+export interface DocumentCheck {
+  label: string;
+  status: "확보" | "요청 필요";
+  note?: string;
 }
 
 export interface DiagnosisResult {
@@ -273,6 +319,14 @@ export interface DiagnosisResult {
   industryCategory?: IndustryCategory;
   // 후순위/제외 기관 사유 (9차: 기관 적격성 보정)
   deprioritized?: DeprioritizedAgency[];
+  // 사업계획 AI / 심사 AI (10차 — 전부 옵셔널)
+  planQuestions?: string[]; // 사업계획서 작성용 추가 질문
+  planScore?: PlanScore; // 사업계획 완성도 (100점)
+  planDraft?: PlanDraft; // 사업계획 초안 (8개 섹션)
+  reviewSim?: ReviewSimulation; // 심사관 시뮬레이터 (질문+모범답안)
+  documentChecks?: DocumentCheck[]; // 자료 확보/부족 체크
+  growthKeywords?: string[]; // 업종별 성장 키워드
+  coachMessage?: string; // 김팀장 AI 한마디
 }
 
 // 고객(CRM) 진행 단계 및 고객 레코드 — Mock 대시보드/상세에서 사용.

@@ -372,7 +372,38 @@ function ReportDocument({ customer }: { customer: Customer }) {
             )}
           </section>
 
-          {/* 섹션 6. 안내 문구 */}
+          {/* 섹션 6. 사업계획 초안 (AI 자동 생성 — 진단 고객만) */}
+          {r.planDraft && (
+            <section className="report-section">
+              <h2 className="text-lg font-bold text-slate-900">
+                6. 사업계획 초안{" "}
+                <span className="text-sm font-medium text-slate-400">
+                  (AI 자동 생성 · {r.planDraft.agency} 기준)
+                </span>
+              </h2>
+              <p className="mt-2 rounded-xl bg-blue-50/60 px-4 py-3 text-xs leading-5 text-blue-800">
+                💡 {r.planDraft.emphasis}
+              </p>
+              <div className="mt-4 space-y-4">
+                {r.planDraft.sections.map((s) => (
+                  <div key={s.no}>
+                    <p className="text-sm font-bold text-slate-800">
+                      {s.no}. {s.title}
+                    </p>
+                    <p className="mt-1 text-sm leading-7 text-slate-600">
+                      {s.text}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-4 text-xs text-slate-400">
+                ※ XX 표시는 대표님과 함께 채울 숫자입니다. 초안을 바탕으로 근거
+                자료를 붙여 완성하세요.
+              </p>
+            </section>
+          )}
+
+          {/* 섹션 7. 안내 문구 */}
           <section className="report-section border-t border-slate-100 pt-6">
             <p className="text-xs leading-6 text-slate-500">
               ※ {r.disclaimer}

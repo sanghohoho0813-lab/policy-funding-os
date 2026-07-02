@@ -44,6 +44,13 @@ import { generateScripts, generateMessages, buildCoachInsight } from "./scriptGe
 import { recommendUpsells } from "./upsellEngine";
 import { buildRoadmap } from "./roadmapEngine";
 import { calculateConfidence } from "./confidenceCalculator";
+// ── 사업계획 AI / 심사 AI (10차) ──
+import { getFramework, scorePlan } from "./planEngine";
+import { buildPlanDraft } from "./storyEngine";
+import { generatePlanQuestions } from "./questionEngine";
+import { buildReviewSimulation } from "./reviewEngine";
+import { checkDocuments } from "./documentEngine";
+import { getGrowthPoints } from "./growthEngine";
 
 // ── knowledge 스키마 타입 ──
 export interface AgencyRule {
@@ -480,8 +487,14 @@ export function runKnowledgeDiagnosis(input: DiagnosisInput): DiagnosisResult {
   // 4) 리스크 (precheck + checkpoints)
   const risk = analyzeRisk(profile, KB);
 
-  // 5) reasoning (사람처럼 설명)
-  const reasoning = generateReasoning(profile, agencies, cases, risk, KB);
+  // 4-1) 기관별 사업계획 Framework + 업종 성장 포인트 (10차)
+  const framework = getFramework(topAgency);
+  const growth = getGrowthPoints(profile.industryCategory);
+
+  // 5) reasoning (사람처럼 설명) — 기관 추천 + 사업계획 강조점까지 (작업 11)
+  const reasoning =
+    generateReasoning(profile, agencies, cases, risk, KB) +
+    ` 사업계획서에서는 ${framework.emphasis}`;
 
   // 6) scripts + coachInsight (funding-scripts / contract-notices / 인콜 조건부 질문)
   const coach = generateScripts(profile, topAgency, KB);
@@ -495,8 +508,28 @@ export function runKnowledgeDiagnosis(input: DiagnosisInput): DiagnosisResult {
   // 7) upsell (upsell-rules + funding-upsells, TOP5)
   const upsells = recommendUpsells(profile, KB);
 
-  // 8) roadmap (30/60/90)
+  // 8) roadmap — 기관별 로드맵 (funding-roadmaps.json)
   const roadmap = buildRoadmap(profile, topAgency, risk);
+
+  // 8-1) 사업계획 AI: 질문·점수·초안 (10차)
+  const planQuestions = generatePlanQuestions(profile);
+  const planScore = scorePlan(profile);
+  const planDraft = buildPlanDraft(profile, framework, growth);
+
+  // 8-2) 심사 AI: 심사관 시뮬레이터 + 자료 부족 탐지
+  const reviewSim = buildReviewSimulation(profile, topAgency);
+  const documentChecks = checkDocuments(profile);
+
+  // 8-3) 김팀장 AI 한마디 (작업 12) — 사업계획 완성도 기반
+  const weak2 = planScore.weakPoints
+    .slice(0, 2)
+    .map((w) => w.split(":")[0]);
+  const coachMessage =
+    planScore.total < 70
+      ? `이 업체는 사업계획서가 승인 여부를 결정할 가능성이 높습니다. 특히 ${
+          weak2.length > 0 ? weak2.join("·") : "매출 증가 논리"
+        } 부분을 강하게 보완하면 승인 가능성이 눈에 띄게 올라갑니다. ${framework.emphasis}`
+      : `사업계획 기본기는 갖춰져 있습니다(완성도 ${planScore.total}점). 이제 ${framework.focus.slice(0, 3).join("·")} 중심으로 숫자를 다듬고, 증빙을 눈으로 보여줄 준비를 하면 됩니다.`;
 
   // 9) 진행 추천도 (기관 점수 집계)
   const avg =
@@ -544,6 +577,14 @@ export function runKnowledgeDiagnosis(input: DiagnosisInput): DiagnosisResult {
     roadmap,
     industryCategory: profile.industryCategory,
     deprioritized,
+    // 사업계획 AI / 심사 AI (10차)
+    planQuestions,
+    planScore,
+    planDraft,
+    reviewSim,
+    documentChecks,
+    growthKeywords: growth.keywords,
+    coachMessage,
   };
 }
 
